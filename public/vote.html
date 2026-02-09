@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TEJUS 2026 Voting</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <div class="logo-wrap">
+        <img src="https://yt3.googleusercontent.com/7sys579QuRAkoPsKw1DMCP5-lAJgmJas4zM6Sk9R8puYGWWW5HBXU1YnZcHn4E4H0RmuONDQOA=s900-c-k-c0x00ffffff-no-rj" alt="Anurag University" class="logo" />
+      </div>
+      <div class="hero-text">
+        <h1>TEJAS 2026</h1>
+        <p>Project Expo – Anurag University</p>
+      </div>
+    </header>
+
+    <section class="glass-card" id="project-card">
+      <div class="project-badge">Project Spotlight</div>
+      <h2 id="project-title">Loading project...</h2>
+      <p id="project-team" class="muted"></p>
+      <p id="project-category" class="chip"></p>
+      <p id="project-sector" class="chip chip-alt"></p>
+      <p id="project-department" class="muted"></p>
+      <p id="project-members" class="muted"></p>
+      <p id="project-description" class="description"></p>
+    </section>
+
+    <section class="glass-card" id="vote-card">
+      <h3>Cast Your Score</h3>
+      <div class="input-group">
+        <label for="voter-name">Voter Name</label>
+        <input id="voter-name" type="text" placeholder="Enter your name" maxlength="40" />
+        <small id="name-lock" class="hint"></small>
+      </div>
+
+      <div class="slider-wrap">
+        <div class="score-header">
+          <span>Score</span>
+          <span id="score-value">7</span>
+        </div>
+        <input id="score-slider" type="range" min="0" max="10" step="1" value="7" />
+        <div class="score-meta">
+          <span id="score-emoji">🙂</span>
+          <span id="score-label">Good</span>
+        </div>
+        <div class="score-bar">
+          <div id="score-bar-fill"></div>
+        </div>
+      </div>
+
+      <button id="submit-vote" class="primary-btn">Submit Vote</button>
+      <div id="vote-message" class="message"></div>
+    </section>
+
+    <section class="glass-card success-card" id="success-card">
+      <div class="success-animation">🎉</div>
+      <h3>Vote recorded!</h3>
+      <p id="success-message">Your vote has been recorded successfully.</p>
+      <p id="success-timestamp" class="muted"></p>
+    </section>
+  </main>
+
+  <script src="/js/vote.js"></script>
+</body>
+</html>

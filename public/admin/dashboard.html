@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | TEJUS 2026</title>
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+  <main class="dashboard">
+    <header class="dashboard-header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <img src="https://yt3.googleusercontent.com/7sys579QuRAkoPsKw1DMCP5-lAJgmJas4zM6Sk9R8puYGWWW5HBXU1YnZcHn4E4H0RmuONDQOA=s900-c-k-c0x00ffffff-no-rj" alt="Anurag University" style="width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,0.1);padding:6px;" />
+        <div>
+          <h1>TEJUS 2026 Admin Dashboard</h1>
+          <p class="muted">Create projects, generate QR codes, and monitor scores.</p>
+        </div>
+      </div>
+      <button id="logout-btn" class="ghost-btn">Logout</button>
+    </header>
+
+    <section class="grid">
+      <div class="glass-card">
+        <h3>Project Editor + QR</h3>
+        <p id="current-project" class="muted">No project selected</p>
+        <div class="input-group">
+          <label for="project-title">Project Name</label>
+          <input id="project-title" type="text" placeholder="Project Name" />
+        </div>
+        <div class="input-group">
+          <label for="project-sector">Sector</label>
+          <input id="project-sector" type="text" placeholder="AI & ML" />
+        </div>
+        <div class="input-group">
+          <label for="project-department">Department</label>
+          <input id="project-department" type="text" placeholder="CSE" />
+        </div>
+        <div class="input-group">
+          <label for="project-members">Team Members</label>
+          <textarea id="project-members" rows="3" placeholder="Name1, Name2"></textarea>
+        </div>
+        <div class="input-group">
+          <label for="project-abstract">Abstract</label>
+          <textarea id="project-abstract" rows="4" placeholder="Project abstract"></textarea>
+        </div>
+        <div class="action-row">
+          <button id="create-project" class="primary-btn">Generate QR</button>
+          <button id="update-project" class="ghost-btn" disabled>Update Project</button>
+          <button id="delete-project" class="danger-btn" disabled>Delete Project</button>
+        </div>
+        <div id="project-message" class="message"></div>
+        <div id="qr-preview" class="qr-preview"></div>
+      </div>
+
+      <div class="glass-card">
+        <h3>QR Gallery</h3>
+        <div id="qr-gallery" class="qr-gallery"></div>
+      </div>
+    </section>
+
+    <section class="glass-card">
+      <h3>Results & Filters</h3>
+      <div class="filters">
+        <input id="filter-project" type="text" placeholder="Project ID" />
+        <input id="filter-min" type="number" min="0" max="10" placeholder="Min score" />
+        <input id="filter-max" type="number" min="0" max="10" placeholder="Max score" />
+        <input id="filter-from" type="datetime-local" />
+        <input id="filter-to" type="datetime-local" />
+        <button id="apply-filters" class="primary-btn">Apply Filters</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>Score</th>
+              <th>Voter</th>
+              <th>Device</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="results-table"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+const state = {
+  projectId: null,
+  deviceHash: null,
+  voterName: null,
+  eligible: true
+};
+
+const elements = {
+  title: document.getElementById("project-title"),
+  team: document.getElementById("project-team"),
+  category: document.getElementById("project-category"),
+  sector: document.getElementById("project-sector"),
+  department: document.getElementById("project-department"),
+  members: document.getElementById("project-members"),
+  description: document.getElementById("project-description"),
+  nameInput: document.getElementById("voter-name"),
+  nameLock: document.getElementById("name-lock"),
+  slider: document.getElementById("score-slider"),
+  scoreValue: document.getElementById("score-value"),
+  scoreEmoji: document.getElementById("score-emoji"),
+  scoreLabel: document.getElementById("score-label"),
+  scoreBar: document.getElementById("score-bar-fill"),
+  submitButton: document.getElementById("submit-vote"),
+  message: document.getElementById("vote-message"),
+  successCard: document.getElementById("success-card"),
+  successTimestamp: document.getElementById("success-timestamp")
+};
+
+const scoreMeta = [
+  { min: 0, max: 3, label: "Poor", emoji: "😐", color: "#ff5d5d" },
+  { min: 4, max: 7, label: "Good", emoji: "🙂", color: "#ffcc4d" },
+  { min: 8, max: 10, label: "Excellent", emoji: "😄", color: "#3ddc84" }
+];
+
+const getScoreMeta = (value) => scoreMeta.find((item) => value >= item.min && value <= item.max);
+
+const setScoreUI = (value) => {
+  const meta = getScoreMeta(value);
+  elements.scoreValue.textContent = value;
+  elements.scoreEmoji.textContent = meta.emoji;
+  elements.scoreLabel.textContent = meta.label;
+  elements.scoreBar.style.width = `${value * 10}%`;
+  elements.scoreBar.style.background = meta.color;
+};
+
+const getProjectId = () => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("projectId");
+};
+
+const hashString = async (input) => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+};
+
+const getDeviceFingerprint = async () => {
+  const fingerprintSource = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width,
+    screen.height,
+    screen.colorDepth,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    navigator.platform
+  ].join("::");
+
+  return hashString(fingerprintSource);
+};
+
+const setMessage = (text, isError = false) => {
+  elements.message.textContent = text;
+  elements.message.style.color = isError ? "#ff9b9b" : "#cbe5ff";
+};
+
+const disableVoting = (message) => {
+  elements.submitButton.disabled = true;
+  elements.slider.disabled = true;
+  elements.nameInput.disabled = true;
+  setMessage(message, true);
+};
+
+const lockName = (name) => {
+  if (name) {
+    localStorage.setItem("tejus_voter_name", name);
+    elements.nameInput.value = name;
+    elements.nameInput.disabled = true;
+    elements.nameLock.textContent = "Name locked to this device.";
+  }
+};
+
+const fetchProject = async () => {
+  const response = await fetch(`/api/projects/${encodeURIComponent(state.projectId)}`);
+  if (!response.ok) {
+    throw new Error("Project not found");
+  }
+  return response.json();
+};
+
+const checkEligibility = async () => {
+  const response = await fetch(`/api/votes/check?projectId=${encodeURIComponent(state.projectId)}&deviceHash=${encodeURIComponent(state.deviceHash)}`);
+  if (!response.ok) {
+    throw new Error("Unable to verify eligibility");
+  }
+  return response.json();
+};
+
+const submitVote = async () => {
+  const payload = {
+    projectId: state.projectId,
+    deviceHash: state.deviceHash,
+    voterName: elements.nameInput.value.trim(),
+    score: Number(elements.slider.value)
+  };
+
+  const response = await fetch("/api/votes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Vote submission failed");
+  }
+
+  return data;
+};
+
+const showSuccess = (timestamp) => {
+  const finalName = elements.nameInput.value.trim();
+  if (finalName) {
+    localStorage.setItem("tejus_voter_name", finalName);
+  }
+  elements.successTimestamp.textContent = `Submitted at ${new Date(timestamp).toLocaleString()}`;
+  elements.successCard.classList.add("show");
+  elements.submitButton.disabled = true;
+  elements.slider.disabled = true;
+  elements.nameInput.disabled = true;
+  setMessage("", false);
+};
+
+const init = async () => {
+  state.projectId = getProjectId();
+  if (!state.projectId) {
+    disableVoting("Invalid QR code. Project ID missing.");
+    return;
+  }
+
+  const cachedName = localStorage.getItem("tejus_voter_name");
+  if (cachedName) {
+    lockName(cachedName);
+  }
+
+  setScoreUI(Number(elements.slider.value));
+
+  elements.slider.addEventListener("input", (event) => {
+    setScoreUI(Number(event.target.value));
+  });
+
+  elements.submitButton.addEventListener("click", async () => {
+    elements.submitButton.disabled = true;
+    setMessage("Submitting your vote...");
+    try {
+      const result = await submitVote();
+      showSuccess(result.timestamp);
+    } catch (error) {
+      elements.submitButton.disabled = false;
+      setMessage(error.message, true);
+    }
+  });
+
+  try {
+    state.deviceHash = await getDeviceFingerprint();
+    const [project, eligibility] = await Promise.all([fetchProject(), checkEligibility()]);
+
+    elements.title.textContent = project.title;
+    elements.team.textContent = project.teamName;
+    elements.category.textContent = project.category;
+    elements.sector.textContent = project.sector ? `Sector: ${project.sector}` : "";
+    elements.department.textContent = project.department ? `Department: ${project.department}` : "";
+    elements.members.textContent = project.teamMembers ? `Team: ${project.teamMembers}` : "";
+    elements.description.textContent = project.description;
+
+    if (eligibility.voterName) {
+      lockName(eligibility.voterName);
+    }
+
+    if (!eligibility.eligible) {
+      state.eligible = false;
+      disableVoting("Vote already recorded for this project on this device.");
+    }
+  } catch (error) {
+    disableVoting(error.message || "Unable to load project");
+  }
+};
+
+init();
