@@ -45,24 +45,35 @@ const ensureDir = (dirPath) => {
 
 export const adminLogin = (req, res) => {
   const { email, password } = req.body;
+  console.log(`[AUTH] Login attempt: ${email}`);
+  
   if (!isNonEmptyString(email) || !isNonEmptyString(password)) {
+    console.warn("[AUTH] Invalid credentials provided");
     return res.status(400).json({ error: "Email and password are required" });
   }
+  
   if (!isValidCredential(email, password)) {
+    console.warn(`[AUTH] Login failed for ${email}`);
     return res.status(401).json({ error: "Invalid credentials" });
   }
+  
   const token = issueAdminToken({ email });
+  console.log(`[AUTH] ✓ Login successful for ${email}`);
   return res.json({ token, email });
 };
 
 export const createProjectWithQr = async (req, res) => {
   const { teamNumber, teamName, sector, title, department } = req.body;
+  
+  console.log(`[PROJECT] Creating project: ${teamNumber}`);
 
   if (!isNonEmptyString(teamNumber)) {
+    console.warn("[PROJECT] Team number required");
     return res.status(400).json({ error: "teamNumber is required" });
   }
 
   if (!isNonEmptyString(title)) {
+    console.warn("[PROJECT] Project title required");
     return res.status(400).json({ error: "title is required" });
   }
 
@@ -77,10 +88,14 @@ export const createProjectWithQr = async (req, res) => {
   };
 
   try {
+    console.log(`[PROJECT] Saving ${projectId} to database...`);
     await createProject(project);
+    console.log(`[PROJECT] ✓ ${projectId} saved to database`);
+    
     const url = `${config.qrBaseUrl}/vote?projectId=${encodeURIComponent(projectId)}`;
     
     // Generate QR Data URL for preview
+    console.log(`[QR] Generating QR code for ${projectId}`);
     const qrDataUrl = await QRCode.toDataURL(url, { 
       width: 512, 
       margin: 2,
@@ -103,10 +118,11 @@ export const createProjectWithQr = async (req, res) => {
         light: "#FFFFFF"
       }
     });
-
+    
+    console.log(`[QR] ✓ QR code saved to ${qrFilePath}`);
     return res.status(201).json({ project, qrDataUrl });
   } catch (error) {
-    console.error("QR generation error:", error);
+    console.error(`[PROJECT] Error creating ${projectId}:`, error.message);
     throw error;
   }
 };

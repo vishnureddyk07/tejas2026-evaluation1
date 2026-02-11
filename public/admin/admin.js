@@ -18,8 +18,17 @@ const apiFetch = async (url, options = {}) => {
   const fullUrl = url.startsWith("http") ? url : `${API_URL}${url}`;
   const response = await fetch(fullUrl, { ...options, headers });
   const data = await response.json().catch(() => ({}));
+  
+  // Check for authorization errors
+  if (response.status === 401) {
+    console.warn("[AUTH] Token expired or invalid, redirecting to login");
+    clearToken();
+    window.location.href = "/admin/login";
+    throw new Error("Session expired. Please login again.");
+  }
+  
   if (!response.ok) {
-    throw new Error(data.error || "Request failed");
+    throw new Error(data.error || `Request failed: ${response.status}`);
   }
   return data;
 };
@@ -180,13 +189,22 @@ const initDashboard = async () => {
         method: "POST",
         body: JSON.stringify(payload)
       });
+      
+      // Immediately display the QR
       currentQrDataUrl = result.qrDataUrl;
       qrPreview.innerHTML = `<img src="${result.qrDataUrl}" alt="QR" style="max-width: 300px; border-radius: 8px;" />`;
       selectedProjectId = result.project.id;
       document.getElementById("download-qr").disabled = false;
-      setMessage(projectMessage, `✓ Created ${result.project.id}`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setMessage(projectMessage, `✓ Created ${result.project.id} - Saving data...`);
+      
+      // Reload projects list in the background
       await loadProjects();
+      
+      // Once projects are loaded, verify the new project is in the list
+      const newProject = projectCache.find(p => p.id === result.project.id);
+      if (newProject) {
+        setMessage(projectMessage, `✓ Created and saved ${result.project.id}`);
+      }
     } catch (error) {
       setMessage(projectMessage, error.message, true);
       currentQrDataUrl = null;
@@ -246,16 +264,29 @@ const initDashboard = async () => {
   });
 
   logoutBtn.addEventListener("click", () => {
+    console.log("[AUTH] Logging out...");
     clearToken();
     window.location.href = "/admin/login";
   });
 
   try {
+    console.log("[DASHBOARD] Initializing dashboard...");
     resetForm();
     await loadProjects();
+    console.log("[DASHBOARD] ✓ Projects loaded, loading votes...");
     await loadVotes();
+    console.log("[DASHBOARD] ✓ Dashboard initialized");
   } catch (error) {
-    setMessage(projectMessage, error.message, true);
+    console.error("[DASHBOARD] Initialization error:", error.message);
+    if (error.message.includes("Session expired") || error.message.includes("Unauthorized")) {
+      setMessage(projectMessage, "Session expired. Please login again.", true);
+      setTimeout(() => {
+        clearToken();
+        window.location.href = "/admin/login";
+      }, 2000);
+    } else {
+      setMessage(projectMessage, error.message, true);
+    }
   }
 };
 
