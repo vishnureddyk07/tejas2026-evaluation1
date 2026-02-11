@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import helmet from "helmet";
 import cors from "cors";
+import config from "./config/index.js";
 import { apiLimiter } from "./middleware/rateLimiter.js";
 import projectsRoutes from "./routes/projects.js";
 import votesRoutes from "./routes/votes.js";
@@ -14,6 +15,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+console.log("=== APP STARTUP DEBUG ===");
+console.log("process.env.ADMIN_USERS:", process.env.ADMIN_USERS);
+console.log("config.adminUsers:", config.adminUsers);
+console.log("========================");
 
 app.use(helmet({
   contentSecurityPolicy: false
@@ -39,6 +45,14 @@ app.get("/admin/login", (req, res) => {
 
 app.get("/admin/dashboard", (req, res) => {
   res.sendFile(path.join(publicDir, "admin", "dashboard.html"));
+});
+
+app.get("/api/debug/config", (req, res) => {
+  res.json({
+    env_ADMIN_USERS: process.env.ADMIN_USERS,
+    config_adminUsers: config.adminUsers,
+    NODE_ENV: process.env.NODE_ENV
+  });
 });
 
 app.get("/vote", (req, res) => {
