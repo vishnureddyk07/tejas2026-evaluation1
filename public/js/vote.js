@@ -1,3 +1,5 @@
+const API_URL = "https://tejas2026-evaluation.onrender.com";
+
 const state = {
   projectId: null,
   deviceHash: null,
@@ -86,7 +88,7 @@ const lockName = (name) => {
 };
 
 const fetchProject = async () => {
-  const response = await fetch(`/api/projects/${encodeURIComponent(state.projectId)}`);
+  const response = await fetch(`${API_URL}/api/projects/${encodeURIComponent(state.projectId)}`);
   if (!response.ok) {
     throw new Error("Project not found");
   }
@@ -94,7 +96,7 @@ const fetchProject = async () => {
 };
 
 const checkEligibility = async () => {
-  const response = await fetch(`/api/votes/check?projectId=${encodeURIComponent(state.projectId)}&deviceHash=${encodeURIComponent(state.deviceHash)}`);
+  const response = await fetch(`${API_URL}/api/votes/check?projectId=${encodeURIComponent(state.projectId)}&deviceHash=${encodeURIComponent(state.deviceHash)}`);
   if (!response.ok) {
     throw new Error("Unable to verify eligibility");
   }
@@ -109,7 +111,7 @@ const submitVote = async () => {
     score: Number(elements.slider.value)
   };
 
-  const response = await fetch("/api/votes", {
+  const response = await fetch(`${API_URL}/api/votes`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)

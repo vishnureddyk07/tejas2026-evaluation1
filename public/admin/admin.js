@@ -1,4 +1,5 @@
 const tokenKey = "tejus_admin_token";
+const API_URL = "https://tejas2026-evaluation.onrender.com";
 
 const setMessage = (el, text, isError = false) => {
   if (!el) return;
@@ -14,7 +15,8 @@ const apiFetch = async (url, options = {}) => {
   const token = getToken();
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const response = await fetch(url, { ...options, headers });
+  const fullUrl = url.startsWith("http") ? url : `${API_URL}${url}`;
+  const response = await fetch(fullUrl, { ...options, headers });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(data.error || "Request failed");
