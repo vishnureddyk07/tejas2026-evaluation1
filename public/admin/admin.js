@@ -67,8 +67,23 @@ const renderGallery = (container, projects, onSelect) => {
         <div><strong>${project.id}</strong> — ${project.title}</div>
         <div class="muted">${project.category || project.sector || ""}</div>
       </div>
+      <button class="download-qr-btn" data-project-id="${project.id}" title="Download QR">⬇️</button>
     `;
-    item.addEventListener("click", () => onSelect(project));
+    item.addEventListener("click", (e) => {
+      if (!e.target.classList.contains("download-qr-btn")) {
+        onSelect(project);
+      }
+    });
+    
+    const downloadBtn = item.querySelector(".download-qr-btn");
+    downloadBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const link = document.createElement("a");
+      link.href = `/qr/${project.id}.png`;
+      link.download = `${project.id}-qr.png`;
+      link.click();
+    });
+    
     container.appendChild(item);
   });
 };
@@ -255,10 +270,10 @@ const initDashboard = async () => {
     const filters = {
       projectTitle: document.getElementById("filter-title").value.trim(),
       teamNumber: document.getElementById("filter-team").value.trim(),
+      department: document.getElementById("filter-department").value.trim(),
+      sector: document.getElementById("filter-sector").value.trim(),
       minScore: document.getElementById("filter-min").value,
-      maxScore: document.getElementById("filter-max").value,
-      from: document.getElementById("filter-from").value,
-      to: document.getElementById("filter-to").value
+      maxScore: document.getElementById("filter-max").value
     };
     await loadVotes(filters);
   });

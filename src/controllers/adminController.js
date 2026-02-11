@@ -170,29 +170,31 @@ export const deleteProjectAdmin = async (req, res) => {
 };
 
 export const getVotesAdmin = async (req, res) => {
-  const { projectTitle, teamNumber, minScore, maxScore, from, to } = req.query;
+  const { projectTitle, teamNumber, department, sector, minScore, maxScore } = req.query;
   
-  // Fetch all votes with score and date filters
+  // Fetch all votes with score filters
   const voteFilters = {
     projectId: null,
     minScore: minScore !== undefined ? Number(minScore) : null,
     maxScore: maxScore !== undefined ? Number(maxScore) : null,
-    from: from || null,
-    to: to || null
+    from: null,
+    to: null
   };
 
   const votes = await listVotes(voteFilters);
   
   // If project filters are specified, get projects and filter votes
-  if (projectTitle || teamNumber) {
+  if (projectTitle || teamNumber || department || sector) {
     const projects = await listProjects();
     const projectMap = new Map();
     
     projects.forEach(p => {
-      if (
-        (!projectTitle || (p.title && p.title.toLowerCase().includes(projectTitle.toLowerCase()))) &&
-        (!teamNumber || p.teamNumber === teamNumber)
-      ) {
+      const titleMatch = !projectTitle || (p.title && p.title.toLowerCase().includes(projectTitle.toLowerCase()));
+      const teamMatch = !teamNumber || p.teamNumber === teamNumber;
+      const deptMatch = !department || (p.department && p.department.toLowerCase().includes(department.toLowerCase()));
+      const sectorMatch = !sector || (p.sector && p.sector.toLowerCase().includes(sector.toLowerCase()));
+      
+      if (titleMatch && teamMatch && deptMatch && sectorMatch) {
         projectMap.set(p.id, p);
       }
     });
