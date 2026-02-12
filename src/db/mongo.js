@@ -16,10 +16,12 @@ export const createMongoAdapter = async (dbUrl, { inMemory = false } = {}) => {
   const projects = db.collection("projects");
   const devices = db.collection("devices");
   const votes = db.collection("votes");
+  const activityLogs = db.collection("activityLogs");
 
   await projects.createIndex({ id: 1 }, { unique: true });
   await devices.createIndex({ deviceHash: 1 }, { unique: true });
   await votes.createIndex({ projectId: 1, deviceHash: 1 }, { unique: true });
+  await activityLogs.createIndex({ timestamp: -1 });
 
   return {
     close: async () => {
@@ -110,6 +112,21 @@ export const createMongoAdapter = async (dbUrl, { inMemory = false } = {}) => {
       },
       removeAll: async () => {
         await votes.deleteMany({});
+      }
+    },
+    activityLogs: {
+      insert: async (log) => {
+        await activityLogs.insertOne(log);
+      },
+      list: async ({ type, action, user, limit = 100 }) => {
+        const query = {};
+        if (type) query.type = type;
+        if (action) query.action = action;
+        if (user) query.user = user;
+        return activityLogs.find(query, { projection: { _id: 0 } }).sort({ timestamp: -1 }).limit(limit).toArray();
+      },
+      getAll: async (limit = 100) => {
+        return activityLogs.find({}, { projection: { _id: 0 } }).sort({ timestamp: -1 }).limit(limit).toArray();
       }
     }
   };

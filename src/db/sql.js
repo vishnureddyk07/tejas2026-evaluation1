@@ -83,6 +83,20 @@ const ensureSchema = async (knex) => {
       });
     }
   }
+
+  const hasActivityLogs = await knex.schema.hasTable("activity_logs");
+  if (!hasActivityLogs) {
+    await knex.schema.createTable("activity_logs", (table) => {
+      table.string("id").primary();
+      table.string("type").notNullable(); // 'auth', 'project', 'vote', 'filter'
+      table.string("action").notNullable(); // 'login_success', 'create', 'update', etc.
+      table.string("user").notNullable();
+      table.text("details").notNullable(); // JSON string
+      table.string("ip_address").notNullable().defaultTo("Unknown");
+      table.timestamp("timestamp").defaultTo(knex.fn.now());
+      table.index("timestamp");
+    });
+  }
 };
 
 export const createSqlAdapter = async (dbUrl, provider) => {
@@ -181,6 +195,21 @@ export const createSqlAdapter = async (dbUrl, provider) => {
       },
       removeAll: async () => {
         await knex("votes").delete();
+      }
+    },
+    activityLogs: {
+      insert: async (log) => {
+        await knex("activity_logs").insert(log);
+      },
+      list: async ({ type, action, user, limit = 100 }) => {
+        let query = knex("activity_logs");
+        if (type) query = query.where({ type });
+        if (action) query = query.where({ action });
+        if (user) query = query.where({ user });
+        return query.orderBy("timestamp", "desc").limit(limit);
+      },
+      getAll: async (limit = 100) => {
+        return knex("activity_logs").orderBy("timestamp", "desc").limit(limit);
       }
     }
   };

@@ -71,7 +71,7 @@ export const submitVote = async (req, res) => {
   });
 
   // Log vote submission
-  logActivity("vote", "submit", {
+  await logActivity("vote", "submit", {
     projectId,
     score: Number(score),
     voterName: nameToStore,

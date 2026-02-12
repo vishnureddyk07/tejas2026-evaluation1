@@ -1,40 +1,51 @@
 // Activity Logging System
-const MAX_LOG_SIZE = 500;
-const activityLog = [];
+// This system stores logs in the database for persistence
+let dbActivityLogs = null;
 
 // Generate unique ID
 function generateId() {
   return Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 }
 
+// Set database reference
+export function initActivityLogger(db) {
+  dbActivityLogs = db;
+}
+
 // Log activity
-export function logActivity(type, action, details = {}, user = "system") {
+export async function logActivity(type, action, details = {}, user = "system") {
   const logEntry = {
     id: generateId(),
     timestamp: new Date().toISOString(),
     type,
     action,
     user,
-    details,
-    ipAddress: details.ipAddress || null
+    details: typeof details === 'string' ? details : JSON.stringify(details),
+    ip_address: details?.ipAddress || "Unknown"
   };
 
-  activityLog.unshift(logEntry);
-
-  // Remove old entries if exceeding max size
-  if (activityLog.length > MAX_LOG_SIZE) {
-    activityLog.pop();
+  // Store in database
+  if (dbActivityLogs) {
+    try {
+      await dbActivityLogs.activityLogs.insert(logEntry);
+    } catch (error) {
+      console.error("[ACTIVITY LOG] Failed to store in database:", error);
+    }
   }
 
   console.log(`[ACTIVITY] ${type}:${action} by ${user}`, details);
 }
 
-// Get activity logs
-export function getActivityLog() {
-  return activityLog;
-}
-
-// Get max log size
-export function getMaxLogSize() {
-  return MAX_LOG_SIZE;
+// Get activity logs from database
+export async function getActivityLogs(filters = {}) {
+  if (!dbActivityLogs) {
+    return [];
+  }
+  
+  try {
+    return await dbActivityLogs.activityLogs.getAll(200);
+  } catch (error) {
+    console.error("[ACTIVITY LOG] Failed to fetch from database:", error);
+    return [];
+  }
 }

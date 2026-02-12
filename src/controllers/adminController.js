@@ -7,7 +7,7 @@ import { issueAdminToken } from "../middleware/adminAuth.js";
 import { createProject, listProjects, updateProject, deleteProject } from "../services/projectService.js";
 import { listVotes, deleteVotesByProject, deleteVoteById } from "../services/voteService.js";
 import { isNonEmptyString, sanitizeString } from "../utils/validators.js";
-import { logActivity, getActivityLog, getMaxLogSize } from "../utils/activityLogger.js";
+import { logActivity, getActivityLogs } from "../utils/activityLogger.js";
 
 const parseAdminUsers = () => {
   return config.adminUsers
@@ -44,26 +44,26 @@ const ensureDir = (dirPath) => {
   }
 };
 
-export const adminLogin = (req, res) => {
+export const adminLogin = async (req, res) => {
   const { email, password } = req.body;
   const ipAddress = req.ip || req.connection.remoteAddress || "Unknown";
   console.log(`[AUTH] Login attempt: ${email}`);
   
   if (!isNonEmptyString(email) || !isNonEmptyString(password)) {
     console.warn("[AUTH] Invalid credentials provided");
-    logActivity("auth", "login_failed", { email, reason: "Invalid format", ipAddress }, email);
+    await logActivity("auth", "login_failed", { email, reason: "Invalid format", ipAddress }, email);
     return res.status(400).json({ error: "Email and password are required" });
   }
   
   if (!isValidCredential(email, password)) {
     console.warn(`[AUTH] Login failed for ${email}`);
-    logActivity("auth", "login_failed", { email, reason: "Invalid credentials", ipAddress }, email);
+    await logActivity("auth", "login_failed", { email, reason: "Invalid credentials", ipAddress }, email);
     return res.status(401).json({ error: "Invalid credentials" });
   }
   
   const token = issueAdminToken({ email });
   console.log(`[AUTH] ✓ Login successful for ${email}`);
-  logActivity("auth", "login_success", { email, ipAddress }, email);
+  await logActivity("auth", "login_success", { email, ipAddress }, email);
   return res.json({ token, email });
 };
 
@@ -112,7 +112,7 @@ export const createProjectWithQr = async (req, res) => {
     await createProject(project);
     console.log(`[PROJECT] ✓ ${projectId} saved to database`);
     
-    logActivity("project", "create", { 
+    await logActivity("project", "create", { 
       projectId, 
       teamNumber, 
       title, 
@@ -148,7 +148,7 @@ export const updateProjectAdmin = async (req, res) => {
 
   const updated = await updateProject(projectId, updates);
   
-  logActivity("project", "update", { 
+  await logActivity("project", "update", { 
     projectId, 
     updates 
   }, req.user?.email || "admin");
@@ -165,7 +165,7 @@ export const deleteProjectAdmin = async (req, res) => {
   await deleteVotesByProject(projectId);
   await deleteProject(projectId);
 
-  logActivity("project", "delete", { projectId }, req.user?.email || "admin");
+  await logActivity("project", "delete", { projectId }, req.user?.email || "admin");
 
   return res.json({ message: "Project and QR deleted" });
 };
@@ -244,7 +244,7 @@ export const getVotesAdmin = async (req, res) => {
 
   // Log filter usage
   if (cleanProjectTitle || cleanTeamNumber || cleanDepartment || cleanSector || cleanVoterName) {
-    logActivity("filter", "apply", { 
+    await logActivity("filter", "apply", { 
       projectTitle: cleanProjectTitle,
       teamNumber: cleanTeamNumber,
       department: cleanDepartment,
@@ -263,39 +263,36 @@ export const getVotesAdmin = async (req, res) => {
 // Get activity logs for developer view
 export const getActivityLogs = async (req, res) => {
   try {
+    // RESTRICT TO DEVELOPER ONLY
+    const userEmail = req.user?.email || "unknown";
+    if (userEmail !== "vishnureddy@tejas") {
+      console.warn(`[SECURITY] Unauthorized activity log access attempt by ${userEmail}`);
+      return res.status(403).json({ 
+        error: "Access denied. Only the developer (vishnureddy@tejas) can view activity logs.",
+        userEmail 
+      });
+    }
+
     // Get filter parameters
     const { type, action, user, limit = 100 } = req.query;
     
-    // Filter activity logs
-    let filteredLogs = [...getActivityLog()];
+    // Fetch logs from database
+    let logs = await getActivityLogs({ type, action, user, limit: parseInt(limit) || 100 });
     
-    if (type) {
-      filteredLogs = filteredLogs.filter(log => log.type === type);
-    }
+    // Parse JSON details field
+    const formattedLogs = logs.map(log => ({
+      ...log,
+      details: typeof log.details === 'string' ? JSON.parse(log.details) : log.details,
+      ipAddress: log.ip_address
+    }));
     
-    if (action) {
-      filteredLogs = filteredLogs.filter(log => log.action === action);
-    }
-    
-    if (user) {
-      filteredLogs = filteredLogs.filter(log => 
-        log.user && log.user.toLowerCase().includes(user.toLowerCase())
-      );
-    }
-    
-    // Sort by timestamp descending (most recent first)
-    filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
-    // Limit results
-    const limitNum = parseInt(limit);
-    if (limitNum > 0) {
-      filteredLogs = filteredLogs.slice(0, limitNum);
-    }
+    // Sort by timestamp descending
+    formattedLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
     return res.json({
-      logs: filteredLogs,
-      total: filteredLogs.length,
-      maxSize: getMaxLogSize()
+      logs: formattedLogs,
+      total: formattedLogs.length,
+      restrictedTo: "vishnureddy@tejas"
     });
   } catch (error) {
     console.error("Error fetching activity logs:", error);
@@ -323,7 +320,7 @@ export const deleteVote = async (req, res) => {
     }
 
     // Log vote deletion
-    logActivity("vote", "delete", { voteId }, req.user?.email || "admin");
+    await logActivity("vote", "delete", { voteId }, req.user?.email || "admin");
 
     return res.json({ message: "Vote deleted successfully", voteId });
   } catch (error) {

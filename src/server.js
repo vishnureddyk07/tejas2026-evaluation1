@@ -1,6 +1,7 @@
 import app from "./app.js";
 import config from "./config/index.js";
-import { initDb } from "./db/index.js";
+import { initDb, getDb } from "./db/index.js";
+import { initActivityLogger } from "./utils/activityLogger.js";
 
 const startServer = async () => {
   console.log("=== SERVER STARTUP ===");
@@ -14,6 +15,11 @@ const startServer = async () => {
     console.log("[SERVER] Initializing database...");
     await initDb();
     console.log("[SERVER] ✓ Database ready");
+
+    // Initialize activity logger with database reference
+    const db = getDb();
+    initActivityLogger(db);
+    console.log("[SERVER] ✓ Activity logger initialized");
 
     const server = app.listen(config.port, () => {
       console.log(`\n✓ TEJUS 2k26 server running on port ${config.port}\n`);
