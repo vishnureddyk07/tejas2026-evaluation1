@@ -16,7 +16,7 @@ const startServer = async () => {
     console.log("[SERVER] ✓ Database ready");
 
     const server = app.listen(config.port, () => {
-      console.log(`\n✓ TEJUS 2026 server running on port ${config.port}\n`);
+      console.log(`\n✓ TEJUS 2k26 server running on port ${config.port}\n`);
     });
 
     // Handle graceful shutdown

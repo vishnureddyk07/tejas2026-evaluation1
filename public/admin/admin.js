@@ -102,12 +102,14 @@ const renderVotes = (tbody, votes) => {
       <td>${vote.sector || ""}</td>
       <td>${vote.score}</td>
       <td>${vote.voter_name || vote.voterName || ""}</td>
-      <td>${vote.device_hash || vote.deviceHash}</td>
       <td>${createdAt ? new Date(createdAt).toLocaleString() : ""}</td>
     `;
     tbody.appendChild(row);
   });
 };
+
+let currentVotes = [];
+let scoreSortState = 0; // 0: normal, 1: ascending, 2: descending
 
 const initDashboard = async () => {
   const createBtn = document.getElementById("create-project");
@@ -193,7 +195,10 @@ const initDashboard = async () => {
     
     const query = new URLSearchParams(cleanFilters).toString();
     const data = await apiFetch(`/api/admin/votes?${query}`);
-    renderVotes(resultsTable, data.votes || []);
+    currentVotes = data.votes || [];
+    scoreSortState = 0; // Reset sort state when loading new data
+    document.getElementById("score-sort-indicator").textContent = "";
+    renderVotes(resultsTable, currentVotes);
     
     // Display statistics
     const stats = data.stats || { count: 0, totalScore: 0, averageScore: 0 };
@@ -313,6 +318,28 @@ const initDashboard = async () => {
     await loadVotes({});
   });
 
+  document.getElementById("score-header").addEventListener("click", () => {
+    scoreSortState = (scoreSortState + 1) % 3; // Cycle: 0 -> 1 -> 2 -> 0
+    
+    let sortedVotes = [...currentVotes];
+    const indicator = document.getElementById("score-sort-indicator");
+    
+    if (scoreSortState === 1) {
+      // Ascending
+      sortedVotes.sort((a, b) => a.score - b.score);
+      indicator.textContent = " ↑";
+    } else if (scoreSortState === 2) {
+      // Descending
+      sortedVotes.sort((a, b) => b.score - a.score);
+      indicator.textContent = " ↓";
+    } else {
+      // Normal (original order)
+      indicator.textContent = "";
+    }
+    
+    renderVotes(resultsTable, sortedVotes);
+  });
+
   document.getElementById("download-all-qr").addEventListener("click", async () => {
     if (!projectCache || projectCache.length === 0) {
       alert("No QR codes available to download");
@@ -365,6 +392,25 @@ const initDashboard = async () => {
     console.log("[AUTH] Logging out...");
     clearToken();
     window.location.href = "/admin/login";
+  });
+
+  document.getElementById("developer-btn").addEventListener("click", async () => {
+    try {
+      const [projectsData, votesData] = await Promise.all([
+        apiFetch("/api/admin/projects"),
+        apiFetch("/api/admin/votes")
+      ]);
+      
+      document.getElementById("dev-projects").textContent = JSON.stringify(projectsData, null, 2);
+      document.getElementById("dev-votes").textContent = JSON.stringify(votesData, null, 2);
+      document.getElementById("developer-modal").style.display = "block";
+    } catch (error) {
+      alert("Failed to load developer data: " + error.message);
+    }
+  });
+
+  document.getElementById("close-developer").addEventListener("click", () => {
+    document.getElementById("developer-modal").style.display = "none";
   });
 
   try {
