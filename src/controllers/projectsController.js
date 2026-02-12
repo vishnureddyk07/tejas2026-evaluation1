@@ -11,7 +11,6 @@ export const fetchProjectById = async (req, res) => {
   return res.json({
     id: project.id,
     teamNumber: project.teamNumber || project.id,
-    teamName: project.teamName || project.team_name || "",
     title: project.title || "",
     sector: project.sector || "",
     department: project.department || ""

@@ -3,7 +3,6 @@ import Joi from "joi";
 export const schemas = {
   projectCreate: Joi.object({
     teamNumber: Joi.string().trim().max(50).required(),
-    teamName: Joi.string().trim().max(100).default(""),
     title: Joi.string().trim().min(3).max(100).required(),
     sector: Joi.string().trim().max(50).default(""),
     department: Joi.string().trim().max(50).default(""),
@@ -11,7 +10,6 @@ export const schemas = {
     teamMembers: Joi.string().trim().max(200).default("")
   }),
   projectUpdate: Joi.object({
-    teamName: Joi.string().trim().max(100),
     title: Joi.string().trim().min(3).max(100),
     sector: Joi.string().trim().max(50),
     department: Joi.string().trim().max(50),

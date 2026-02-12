@@ -141,7 +141,6 @@ const initDashboard = async () => {
 
   const inputs = {
     teamNumber: document.getElementById("project-team-number"),
-    teamName: document.getElementById("project-team-name"),
     sector: document.getElementById("project-sector"),
     title: document.getElementById("project-title"),
     department: document.getElementById("project-department")
@@ -155,7 +154,6 @@ const initDashboard = async () => {
     document.getElementById("delete-project").disabled = true;
     document.getElementById("download-qr").disabled = true;
     inputs.teamNumber.value = "";
-    inputs.teamName.value = "";
     inputs.sector.value = "";
     inputs.title.value = "";
     inputs.department.value = "";
@@ -170,7 +168,6 @@ const initDashboard = async () => {
     document.getElementById("delete-project").disabled = false;
     document.getElementById("download-qr").disabled = false;
     inputs.teamNumber.value = project.teamNumber || project.id || "";
-    inputs.teamName.value = project.teamName || "";
     inputs.sector.value = project.sector || project.category || "";
     inputs.title.value = project.title || "";
     inputs.department.value = project.department || "";
@@ -198,7 +195,6 @@ const initDashboard = async () => {
     }
     const payload = {
       teamNumber: teamNumber,
-      teamName: inputs.teamName.value.trim(),
       sector: inputs.sector.value.trim(),
       title: inputs.title.value.trim(),
       department: inputs.department.value.trim()
@@ -235,7 +231,6 @@ const initDashboard = async () => {
   document.getElementById("update-project").addEventListener("click", async () => {
     if (!selectedProjectId) return;
     const payload = {
-      teamName: inputs.teamName.value.trim(),
       sector: inputs.sector.value.trim(),
       title: inputs.title.value.trim(),
       department: inputs.department.value.trim()

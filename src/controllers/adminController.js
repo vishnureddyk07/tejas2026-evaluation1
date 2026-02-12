@@ -63,7 +63,7 @@ export const adminLogin = (req, res) => {
 };
 
 export const createProjectWithQr = async (req, res) => {
-  const { teamNumber, teamName, sector, title, department } = req.body;
+  const { teamNumber, sector, title, department } = req.body;
   
   console.log(`[PROJECT] Creating project: ${teamNumber}`);
 
@@ -97,7 +97,6 @@ export const createProjectWithQr = async (req, res) => {
     const project = {
       id: projectId,
       teamNumber: sanitizeString(teamNumber),
-      teamName: sanitizeString(teamName || ""),
       title: sanitizeString(title),
       sector: sanitizeString(sector || ""),
       department: sanitizeString(department || ""),
@@ -122,14 +121,13 @@ export const getProjectsAdmin = async (req, res) => {
 
 export const updateProjectAdmin = async (req, res) => {
   const { projectId } = req.params;
-  const { teamName, sector, title, department } = req.body;
+  const { sector, title, department } = req.body;
 
   if (!isNonEmptyString(projectId)) {
     return res.status(400).json({ error: "projectId is required" });
   }
 
   const updates = {
-    teamName: sanitizeString(teamName || ""),
     title: sanitizeString(title || ""),
     sector: sanitizeString(sector || ""),
     department: sanitizeString(department || "")
