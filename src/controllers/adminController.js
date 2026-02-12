@@ -7,7 +7,7 @@ import { issueAdminToken } from "../middleware/adminAuth.js";
 import { createProject, listProjects, updateProject, deleteProject } from "../services/projectService.js";
 import { listVotes, deleteVotesByProject, deleteVoteById } from "../services/voteService.js";
 import { isNonEmptyString, sanitizeString } from "../utils/validators.js";
-import { logActivity, getActivityLogsFromDb } from \"../utils/activityLogger.js\";
+import { logActivity, getActivityLogsFromDb } from "../utils/activityLogger.js";
 import { getClientIp } from "../utils/ipUtils.js";
 
 const parseAdminUsers = () => {
