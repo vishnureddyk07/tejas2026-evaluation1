@@ -308,11 +308,15 @@ export const deleteVote = async (req, res) => {
   try {
     const { voteId } = req.params;
     
+    console.log(`[VOTE] Attempting to delete vote: ${voteId}`);
+    
     if (!isNonEmptyString(voteId)) {
       return res.status(400).json({ error: "Vote ID is required" });
     }
 
     const success = await deleteVoteById(voteId);
+    
+    console.log(`[VOTE] Delete result for ${voteId}:`, success);
     
     if (!success) {
       return res.status(404).json({ error: "Vote not found" });

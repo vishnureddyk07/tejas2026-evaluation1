@@ -112,12 +112,15 @@ const renderVotes = (tbody, votes) => {
     deleteBtn.addEventListener("click", async () => {
       if (confirm("Are you sure you want to delete this vote?")) {
         try {
+          console.log(`[DELETE] Deleting vote with ID: ${vote.id}`);
           const response = await apiFetch(`/api/admin/votes/${vote.id}`, {
             method: "DELETE"
           });
+          console.log("[DELETE] Success:", response);
           alert("Vote deleted successfully!");
           await loadVotes(); // Reload votes
         } catch (error) {
+          console.error("[DELETE] Error:", error);
           alert("Failed to delete vote: " + error.message);
         }
       }
