@@ -9,7 +9,8 @@ import {
 	updateProjectAdmin,
 	deleteProjectAdmin,
 	getActivityLogs,
-	deleteVote
+	deleteVote,
+	downloadActivityLogsExcel
 } from "../controllers/adminController.js";
 
 const router = Router();
@@ -22,5 +23,6 @@ router.delete("/projects/:projectId", requireAdmin, asyncHandler(deleteProjectAd
 router.get("/votes", requireAdmin, asyncHandler(getVotesAdmin));
 router.delete("/votes/:voteId", requireAdmin, asyncHandler(deleteVote));
 router.get("/activity-logs", requireAdmin, asyncHandler(getActivityLogs));
+router.get("/download-activity-logs", requireAdmin, asyncHandler(downloadActivityLogsExcel));
 
 export default router;

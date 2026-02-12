@@ -567,6 +567,54 @@ const initDashboard = async () => {
     document.getElementById("developer-modal").style.display = "none";
   });
 
+  // Download activity logs as Excel
+  document.getElementById("download-logs-btn").addEventListener("click", async () => {
+    try {
+      const downloadBtn = document.getElementById("download-logs-btn");
+      const originalText = downloadBtn.textContent;
+      downloadBtn.textContent = "⏳ Downloading...";
+      downloadBtn.disabled = true;
+
+      // Get current filter type
+      const filterType = currentTab === 'all' ? '' : `&type=${currentTab}`;
+      
+      // Fetch the Excel file
+      const response = await fetch(`${API_URL}/api/admin/download-activity-logs?limit=500${filterType}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to download logs");
+      }
+
+      // Create blob from response
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `activity-logs-${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      downloadBtn.textContent = originalText;
+      downloadBtn.disabled = false;
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Failed to download logs: " + error.message);
+      document.getElementById("download-logs-btn").textContent = "⬇️ Download Excel";
+      document.getElementById("download-logs-btn").disabled = false;
+    }
+  });
+
   try {
     console.log("[DASHBOARD] Initializing dashboard...");
     resetForm();

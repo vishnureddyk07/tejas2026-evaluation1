@@ -180,7 +180,10 @@
         <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:12px; overflow-x:auto;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <h3 id="dev-table-title" style="color:#34D399; margin:0;">🔐 Authentication Activity</h3>
-            <span id="dev-count" style="color:#818CF8; font-size:14px;">0 entries</span>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <span id="dev-count" style="color:#818CF8; font-size:14px;">0 entries</span>
+              <button id="download-logs-btn" style="background:#34D399; border:none; color:#000; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600;">⬇️ Download Excel</button>
+            </div>
           </div>
           <table id="dev-activity-table" style="width:100%; border-collapse:collapse; color:#fff; font-size:13px;">
             <thead>

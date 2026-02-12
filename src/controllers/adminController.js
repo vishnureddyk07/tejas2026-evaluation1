@@ -9,6 +9,7 @@ import { listVotes, deleteVotesByProject, deleteVoteById } from "../services/vot
 import { isNonEmptyString, sanitizeString } from "../utils/validators.js";
 import { logActivity, getActivityLogsFromDb } from "../utils/activityLogger.js";
 import { getClientIp } from "../utils/ipUtils.js";
+import XLSX from "xlsx";
 
 const parseAdminUsers = () => {
   return config.adminUsers
@@ -333,5 +334,73 @@ export const deleteVote = async (req, res) => {
   } catch (error) {
     console.error("Error deleting vote:", error);
     return res.status(500).json({ error: "Failed to delete vote" });
+  }
+};
+
+// Download activity logs as Excel
+export const downloadActivityLogsExcel = async (req, res) => {
+  try {
+    // RESTRICT TO DEVELOPER ONLY
+    const userEmail = req.user?.email || "unknown";
+    if (userEmail !== "vishnureddy@tejas") {
+      console.warn(`[SECURITY] Unauthorized activity log download attempt by ${userEmail}`);
+      return res.status(403).json({ 
+        error: "Access denied. Only the developer (vishnureddy@tejas) can download activity logs.",
+        userEmail 
+      });
+    }
+
+    // Get filter parameters
+    const { type, action, user, limit = 500 } = req.query;
+    
+    // Fetch logs from database
+    let logs = await getActivityLogsFromDb({ type, action, user, limit: parseInt(limit) || 500 });
+    
+    // Parse JSON details field
+    const formattedLogs = logs.map(log => ({
+      Timestamp: new Date(log.timestamp).toLocaleString('en-US', { 
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }),
+      Type: log.type,
+      Action: log.action,
+      User: log.user || '-',
+      IP_Address: log.ip_address || '-',
+      Details: typeof log.details === 'string' ? log.details : JSON.stringify(log.details)
+    }));
+
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(formattedLogs);
+    
+    // Set column widths
+    worksheet['!cols'] = [
+      { wch: 22 },  // Timestamp
+      { wch: 12 },  // Type
+      { wch: 15 },  // Action
+      { wch: 20 },  // User
+      { wch: 18 },  // IP_Address
+      { wch: 50 }   // Details
+    ];
+    
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Activity Logs");
+    
+    // Generate buffer
+    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+    
+    // Set response headers
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="activity-logs-${new Date().getTime()}.xlsx"`);
+    
+    // Send the buffer
+    return res.send(buffer);
+  } catch (error) {
+    console.error("Error downloading activity logs:", error);
+    return res.status(500).json({ error: "Failed to download activity logs" });
   }
 };

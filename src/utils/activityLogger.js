@@ -43,9 +43,12 @@ export async function getActivityLogsFromDb(filters = {}) {
   }
   
   try {
-    return await dbActivityLogs.activityLogs.getAll(200);
+    // Pass filters to the database list method
+    const { type, action, user, limit = 200 } = filters;
+    return await dbActivityLogs.activityLogs.list({ type, action, user, limit });
   } catch (error) {
     console.error("[ACTIVITY LOG] Failed to fetch from database:", error);
     return [];
   }
+}
 }
