@@ -7,7 +7,8 @@ import {
 	getProjectsAdmin,
 	getVotesAdmin,
 	updateProjectAdmin,
-	deleteProjectAdmin
+	deleteProjectAdmin,
+	getActivityLogs
 } from "../controllers/adminController.js";
 
 const router = Router();
@@ -18,5 +19,6 @@ router.post("/projects", requireAdmin, asyncHandler(createProjectWithQr));
 router.put("/projects/:projectId", requireAdmin, asyncHandler(updateProjectAdmin));
 router.delete("/projects/:projectId", requireAdmin, asyncHandler(deleteProjectAdmin));
 router.get("/votes", requireAdmin, asyncHandler(getVotesAdmin));
+router.get("/activity-logs", requireAdmin, asyncHandler(getActivityLogs));
 
 export default router;

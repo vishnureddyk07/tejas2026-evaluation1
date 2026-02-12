@@ -2,6 +2,7 @@ import { getProjectById } from "../services/projectService.js";
 import { getDeviceByHash, createDevice } from "../services/deviceService.js";
 import { hasVoted, insertVote } from "../services/voteService.js";
 import { isNonEmptyString, isValidScore, sanitizeString } from "../utils/validators.js";
+import { logActivity } from "../utils/activityLogger.js";
 
 export const checkVoteEligibility = async (req, res) => {
   const { projectId, deviceHash } = req.query;
@@ -68,6 +69,14 @@ export const submitVote = async (req, res) => {
     score: Number(score),
     voterName: nameToStore
   });
+
+  // Log vote submission
+  logActivity("vote", "submit", {
+    projectId,
+    score: Number(score),
+    voterName: nameToStore,
+    deviceHash: deviceHash.substring(0, 8) + "..." // Only log partial hash for privacy
+  }, nameToStore);
 
   return res.status(201).json({
     id: voteId,

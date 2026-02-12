@@ -394,8 +394,129 @@ const initDashboard = async () => {
     window.location.href = "/admin/login";
   });
 
+  // Developer Modal State
+  let currentTab = "auth";
+  let activityLogs = [];
+
+  // Load activity logs
+  async function loadActivityLogs(type = null) {
+    try {
+      const url = type ? `/api/admin/activity-logs?type=${type}&limit=200` : `/api/admin/activity-logs?limit=200`;
+      const data = await apiFetch(url);
+      activityLogs = data.logs || [];
+      return activityLogs;
+    } catch (error) {
+      console.error("Failed to load activity logs:", error);
+      return [];
+    }
+  }
+
+  // Format details for display
+  function formatDetails(details) {
+    if (!details || typeof details !== 'object') return '-';
+    
+    const entries = Object.entries(details)
+      .filter(([key]) => key !== 'ipAddress')
+      .map(([key, value]) => {
+        if (typeof value === 'object') {
+          return `${key}: ${JSON.stringify(value)}`;
+        }
+        return `${key}: ${value}`;
+      });
+    
+    return entries.join(', ') || '-';
+  }
+
+  // Format timestamp
+  function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  }
+
+  // Render activity table
+  function renderActivityTable(logs) {
+    const tbody = document.getElementById("dev-table-body");
+    const countEl = document.getElementById("dev-count");
+    
+    countEl.textContent = `${logs.length} entries`;
+    
+    if (logs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#818CF8;">No activity logged yet</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = logs.map(log => {
+      const typeColor = {
+        'auth': '#34D399',
+        'project': '#818CF8',
+        'vote': '#FBBF24',
+        'filter': '#F472B6'
+      }[log.type] || '#fff';
+
+      const actionBadge = {
+        'login_success': '✅',
+        'login_failed': '❌',
+        'create': '➕',
+        'update': '✏️',
+        'delete': '🗑️',
+        'submit': '📝',
+        'apply': '🔍'
+      }[log.action] || '•';
+
+      return `
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+          <td style="padding:10px 8px; font-size:12px;">${formatTimestamp(log.timestamp)}</td>
+          <td style="padding:10px 8px;"><span style="color:${typeColor}; font-weight:600;">${log.type}</span></td>
+          <td style="padding:10px 8px;">${actionBadge} ${log.action}</td>
+          <td style="padding:10px 8px; color:#34D399;">${log.user || '-'}</td>
+          <td style="padding:10px 8px; font-family:monospace; font-size:11px;">${log.ipAddress || '-'}</td>
+          <td style="padding:10px 8px; font-size:11px; max-width:300px; overflow:hidden; text-overflow:ellipsis;">${formatDetails(log.details)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Switch tab
+  async function switchTab(tab) {
+    currentTab = tab;
+    
+    // Update tab buttons
+    document.querySelectorAll('.dev-tab').forEach(btn => {
+      const isActive = btn.dataset.tab === tab;
+      btn.style.background = isActive ? '#34D399' : 'rgba(255,255,255,0.2)';
+      btn.style.color = isActive ? '#000' : '#fff';
+      btn.style.fontWeight = isActive ? '600' : '400';
+    });
+
+    // Update title
+    const titles = {
+      'auth': '🔐 Authentication Activity',
+      'project': '📁 Project Activity',
+      'vote': '🗳️ Vote Activity',
+      'filter': '🔍 Filter Activity',
+      'all': '📊 All Activity'
+    };
+    document.getElementById("dev-table-title").textContent = titles[tab] || 'Activity Log';
+
+    // Load and render logs
+    const logs = await loadActivityLogs(tab === 'all' ? null : tab);
+    renderActivityTable(logs);
+  }
+
+  // Open developer modal
   document.getElementById("developer-btn").addEventListener("click", async () => {
     try {
+      // Load activity logs and show modal
+      document.getElementById("developer-modal").style.display = "block";
+      await switchTab('auth');
+
+      // Load projects and votes for raw JSON view
       const [projectsData, votesData] = await Promise.all([
         apiFetch("/api/admin/projects"),
         apiFetch("/api/admin/votes")
@@ -403,12 +524,25 @@ const initDashboard = async () => {
       
       document.getElementById("dev-projects").textContent = JSON.stringify(projectsData, null, 2);
       document.getElementById("dev-votes").textContent = JSON.stringify(votesData, null, 2);
-      document.getElementById("developer-modal").style.display = "block";
     } catch (error) {
       alert("Failed to load developer data: " + error.message);
     }
   });
 
+  // Tab click handlers
+  document.querySelectorAll('.dev-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // Toggle raw JSON
+  document.getElementById("toggle-raw-json").addEventListener("click", (e) => {
+    const container = document.getElementById("raw-json-container");
+    const isVisible = container.style.display !== "none";
+    container.style.display = isVisible ? "none" : "block";
+    e.target.textContent = isVisible ? "▼ Show Raw JSON Data" : "▲ Hide Raw JSON Data";
+  });
+
+  // Close developer modal
   document.getElementById("close-developer").addEventListener("click", () => {
     document.getElementById("developer-modal").style.display = "none";
   });

@@ -7,6 +7,7 @@ import { issueAdminToken } from "../middleware/adminAuth.js";
 import { createProject, listProjects, updateProject, deleteProject } from "../services/projectService.js";
 import { listVotes, deleteVotesByProject } from "../services/voteService.js";
 import { isNonEmptyString, sanitizeString } from "../utils/validators.js";
+import { logActivity, getActivityLog, getMaxLogSize } from "../utils/activityLogger.js";
 
 const parseAdminUsers = () => {
   return config.adminUsers
@@ -45,20 +46,24 @@ const ensureDir = (dirPath) => {
 
 export const adminLogin = (req, res) => {
   const { email, password } = req.body;
+  const ipAddress = req.ip || req.connection.remoteAddress || "Unknown";
   console.log(`[AUTH] Login attempt: ${email}`);
   
   if (!isNonEmptyString(email) || !isNonEmptyString(password)) {
     console.warn("[AUTH] Invalid credentials provided");
+    logActivity("auth", "login_failed", { email, reason: "Invalid format", ipAddress }, email);
     return res.status(400).json({ error: "Email and password are required" });
   }
   
   if (!isValidCredential(email, password)) {
     console.warn(`[AUTH] Login failed for ${email}`);
+    logActivity("auth", "login_failed", { email, reason: "Invalid credentials", ipAddress }, email);
     return res.status(401).json({ error: "Invalid credentials" });
   }
   
   const token = issueAdminToken({ email });
   console.log(`[AUTH] ✓ Login successful for ${email}`);
+  logActivity("auth", "login_success", { email, ipAddress }, email);
   return res.json({ token, email });
 };
 
@@ -107,6 +112,14 @@ export const createProjectWithQr = async (req, res) => {
     await createProject(project);
     console.log(`[PROJECT] ✓ ${projectId} saved to database`);
     
+    logActivity("project", "create", { 
+      projectId, 
+      teamNumber, 
+      title, 
+      sector, 
+      department 
+    }, req.user?.email || "admin");
+    
     return res.status(201).json({ project, qrDataUrl });
   } catch (error) {
     console.error(`[PROJECT] Error creating ${projectId}:`, error.message);
@@ -134,6 +147,12 @@ export const updateProjectAdmin = async (req, res) => {
   };
 
   const updated = await updateProject(projectId, updates);
+  
+  logActivity("project", "update", { 
+    projectId, 
+    updates 
+  }, req.user?.email || "admin");
+  
   return res.json({ project: updated });
 };
 
@@ -145,6 +164,8 @@ export const deleteProjectAdmin = async (req, res) => {
 
   await deleteVotesByProject(projectId);
   await deleteProject(projectId);
+
+  logActivity("project", "delete", { projectId }, req.user?.email || "admin");
 
   return res.json({ message: "Project and QR deleted" });
 };
@@ -221,8 +242,63 @@ export const getVotesAdmin = async (req, res) => {
       : 0
   };
 
+  // Log filter usage
+  if (cleanProjectTitle || cleanTeamNumber || cleanDepartment || cleanSector || cleanVoterName) {
+    logActivity("filter", "apply", { 
+      projectTitle: cleanProjectTitle,
+      teamNumber: cleanTeamNumber,
+      department: cleanDepartment,
+      sector: cleanSector,
+      voterName: cleanVoterName,
+      resultsCount: filteredVotes.length
+    }, req.user?.email || "admin");
+  }
+
   return res.json({ 
     votes: mappedVotes,
     stats: stats
   });
+};
+
+// Get activity logs for developer view
+export const getActivityLogs = async (req, res) => {
+  try {
+    // Get filter parameters
+    const { type, action, user, limit = 100 } = req.query;
+    
+    // Filter activity logs
+    let filteredLogs = [...getActivityLog()];
+    
+    if (type) {
+      filteredLogs = filteredLogs.filter(log => log.type === type);
+    }
+    
+    if (action) {
+      filteredLogs = filteredLogs.filter(log => log.action === action);
+    }
+    
+    if (user) {
+      filteredLogs = filteredLogs.filter(log => 
+        log.user && log.user.toLowerCase().includes(user.toLowerCase())
+      );
+    }
+    
+    // Sort by timestamp descending (most recent first)
+    filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    // Limit results
+    const limitNum = parseInt(limit);
+    if (limitNum > 0) {
+      filteredLogs = filteredLogs.slice(0, limitNum);
+    }
+    
+    return res.json({
+      logs: filteredLogs,
+      total: filteredLogs.length,
+      maxSize: getMaxLogSize()
+    });
+  } catch (error) {
+    console.error("Error fetching activity logs:", error);
+    return res.status(500).json({ error: "Failed to fetch activity logs" });
+  }
 };
