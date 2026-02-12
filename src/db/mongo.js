@@ -104,6 +104,10 @@ export const createMongoAdapter = async (dbUrl, { inMemory = false } = {}) => {
       removeByProject: async (projectId) => {
         await votes.deleteMany({ projectId });
       },
+      removeById: async (voteId) => {
+        const result = await votes.deleteOne({ id: voteId });
+        return result.deletedCount > 0;
+      },
       removeAll: async () => {
         await votes.deleteMany({});
       }

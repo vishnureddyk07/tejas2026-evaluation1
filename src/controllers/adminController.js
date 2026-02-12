@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import config from "../config/index.js";
 import { issueAdminToken } from "../middleware/adminAuth.js";
 import { createProject, listProjects, updateProject, deleteProject } from "../services/projectService.js";
-import { listVotes, deleteVotesByProject } from "../services/voteService.js";
+import { listVotes, deleteVotesByProject, deleteVoteById } from "../services/voteService.js";
 import { isNonEmptyString, sanitizeString } from "../utils/validators.js";
 import { logActivity, getActivityLog, getMaxLogSize } from "../utils/activityLogger.js";
 
@@ -300,5 +300,30 @@ export const getActivityLogs = async (req, res) => {
   } catch (error) {
     console.error("Error fetching activity logs:", error);
     return res.status(500).json({ error: "Failed to fetch activity logs" });
+  }
+};
+
+// Delete a vote
+export const deleteVote = async (req, res) => {
+  try {
+    const { voteId } = req.params;
+    
+    if (!isNonEmptyString(voteId)) {
+      return res.status(400).json({ error: "Vote ID is required" });
+    }
+
+    const success = await deleteVoteById(voteId);
+    
+    if (!success) {
+      return res.status(404).json({ error: "Vote not found" });
+    }
+
+    // Log vote deletion
+    logActivity("vote", "delete", { voteId }, req.user?.email || "admin");
+
+    return res.json({ message: "Vote deleted successfully", voteId });
+  } catch (error) {
+    console.error("Error deleting vote:", error);
+    return res.status(500).json({ error: "Failed to delete vote" });
   }
 };

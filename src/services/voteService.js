@@ -22,3 +22,8 @@ export const deleteVotesByProject = async (projectId) => {
   const db = getDb();
   return db.votes.removeByProject(projectId);
 };
+
+export const deleteVoteById = async (voteId) => {
+  const db = getDb();
+  return db.votes.removeById(voteId);
+};

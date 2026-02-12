@@ -175,6 +175,10 @@ export const createSqlAdapter = async (dbUrl, provider) => {
       removeByProject: async (projectId) => {
         await knex("votes").where({ project_id: projectId }).delete();
       },
+      removeById: async (voteId) => {
+        const result = await knex("votes").where({ id: voteId }).delete();
+        return result > 0;
+      },
       removeAll: async () => {
         await knex("votes").delete();
       }

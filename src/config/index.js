@@ -9,7 +9,7 @@ const config = {
   dbUrl: process.env.DB_URL || "mongodb://localhost:27017/tejus2026",
   dbInMemory: String(process.env.DB_IN_MEMORY || "false").toLowerCase() === "true",
   qrBaseUrl: process.env.QR_BASE_URL || "http://localhost:3000",
-  adminUsers: process.env.ADMIN_USERS || "admin@tejas:Admin@2026,judge1@tejas:Judge@2026"
+  adminUsers: process.env.ADMIN_USERS || "admin@tejas:Admin@2026,judge1@tejas:Judge@2026,madhan@tejas:Madhan@2026,parameshwari@tejas:Parameshwari@2026,vishnureddy@tejas:Vishnureddy@2026"
 };
 
 const supportedProviders = new Set(["mongo", "postgres", "mysql"]);

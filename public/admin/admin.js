@@ -103,8 +103,25 @@ const renderVotes = (tbody, votes) => {
       <td>${vote.score}</td>
       <td>${vote.voter_name || vote.voterName || ""}</td>
       <td>${createdAt ? new Date(createdAt).toLocaleString() : ""}</td>
+      <td><button class="delete-vote-btn" data-vote-id="${vote.id}" style="background:#ff5d5d; border:none; color:#fff; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">Delete</button></td>
     `;
     tbody.appendChild(row);
+
+    // Add delete handler
+    const deleteBtn = row.querySelector(".delete-vote-btn");
+    deleteBtn.addEventListener("click", async () => {
+      if (confirm("Are you sure you want to delete this vote?")) {
+        try {
+          const response = await apiFetch(`/api/admin/votes/${vote.id}`, {
+            method: "DELETE"
+          });
+          alert("Vote deleted successfully!");
+          await loadVotes(); // Reload votes
+        } catch (error) {
+          alert("Failed to delete vote: " + error.message);
+        }
+      }
+    });
   });
 };
 
