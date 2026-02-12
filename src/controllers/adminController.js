@@ -7,7 +7,8 @@ import { issueAdminToken } from "../middleware/adminAuth.js";
 import { createProject, listProjects, updateProject, deleteProject } from "../services/projectService.js";
 import { listVotes, deleteVotesByProject, deleteVoteById } from "../services/voteService.js";
 import { isNonEmptyString, sanitizeString } from "../utils/validators.js";
-import { logActivity, getActivityLogs } from "../utils/activityLogger.js";
+import { logActivity, getActivityLogsFromDb } from \"../utils/activityLogger.js\";
+import { getClientIp } from "../utils/ipUtils.js";
 
 const parseAdminUsers = () => {
   return config.adminUsers
@@ -46,8 +47,8 @@ const ensureDir = (dirPath) => {
 
 export const adminLogin = async (req, res) => {
   const { email, password } = req.body;
-  const ipAddress = req.ip || req.connection.remoteAddress || "Unknown";
-  console.log(`[AUTH] Login attempt: ${email}`);
+  const ipAddress = getClientIp(req);
+  console.log(`[AUTH] Login attempt: ${email} from ${ipAddress}`);
   
   if (!isNonEmptyString(email) || !isNonEmptyString(password)) {
     console.warn("[AUTH] Invalid credentials provided");
@@ -62,15 +63,16 @@ export const adminLogin = async (req, res) => {
   }
   
   const token = issueAdminToken({ email });
-  console.log(`[AUTH] ✓ Login successful for ${email}`);
+  console.log(`[AUTH] ✓ Login successful for ${email} from ${ipAddress}`);
   await logActivity("auth", "login_success", { email, ipAddress }, email);
   return res.json({ token, email });
 };
 
 export const createProjectWithQr = async (req, res) => {
   const { teamNumber, sector, title, department } = req.body;
+  const ipAddress = getClientIp(req);
   
-  console.log(`[PROJECT] Creating project: ${teamNumber}`);
+  console.log(`[PROJECT] Creating project: ${teamNumber} from ${ipAddress}`);
 
   if (!isNonEmptyString(teamNumber)) {
     console.warn("[PROJECT] Team number required");
@@ -117,7 +119,8 @@ export const createProjectWithQr = async (req, res) => {
       teamNumber, 
       title, 
       sector, 
-      department 
+      department,
+      ipAddress
     }, req.user?.email || "admin");
     
     return res.status(201).json({ project, qrDataUrl });
@@ -135,6 +138,7 @@ export const getProjectsAdmin = async (req, res) => {
 export const updateProjectAdmin = async (req, res) => {
   const { projectId } = req.params;
   const { sector, title, department } = req.body;
+  const ipAddress = getClientIp(req);
 
   if (!isNonEmptyString(projectId)) {
     return res.status(400).json({ error: "projectId is required" });
@@ -150,7 +154,8 @@ export const updateProjectAdmin = async (req, res) => {
   
   await logActivity("project", "update", { 
     projectId, 
-    updates 
+    updates,
+    ipAddress 
   }, req.user?.email || "admin");
   
   return res.json({ project: updated });
@@ -158,6 +163,7 @@ export const updateProjectAdmin = async (req, res) => {
 
 export const deleteProjectAdmin = async (req, res) => {
   const { projectId } = req.params;
+  const ipAddress = getClientIp(req);
   if (!isNonEmptyString(projectId)) {
     return res.status(400).json({ error: "projectId is required" });
   }
@@ -165,7 +171,7 @@ export const deleteProjectAdmin = async (req, res) => {
   await deleteVotesByProject(projectId);
   await deleteProject(projectId);
 
-  await logActivity("project", "delete", { projectId }, req.user?.email || "admin");
+  await logActivity("project", "delete", { projectId, ipAddress }, req.user?.email || "admin");
 
   return res.json({ message: "Project and QR deleted" });
 };
@@ -277,7 +283,7 @@ export const getActivityLogs = async (req, res) => {
     const { type, action, user, limit = 100 } = req.query;
     
     // Fetch logs from database
-    let logs = await getActivityLogs({ type, action, user, limit: parseInt(limit) || 100 });
+    let logs = await getActivityLogsFromDb({ type, action, user, limit: parseInt(limit) || 100 });
     
     // Parse JSON details field
     const formattedLogs = logs.map(log => ({
@@ -304,8 +310,9 @@ export const getActivityLogs = async (req, res) => {
 export const deleteVote = async (req, res) => {
   try {
     const { voteId } = req.params;
+    const ipAddress = getClientIp(req);
     
-    console.log(`[VOTE] Attempting to delete vote: ${voteId}`);
+    console.log(`[VOTE] Attempting to delete vote: ${voteId} from ${ipAddress}`);
     
     if (!isNonEmptyString(voteId)) {
       return res.status(400).json({ error: "Vote ID is required" });
@@ -320,7 +327,7 @@ export const deleteVote = async (req, res) => {
     }
 
     // Log vote deletion
-    await logActivity("vote", "delete", { voteId }, req.user?.email || "admin");
+    await logActivity("vote", "delete", { voteId, ipAddress }, req.user?.email || "admin");
 
     return res.json({ message: "Vote deleted successfully", voteId });
   } catch (error) {

@@ -37,7 +37,7 @@ export async function logActivity(type, action, details = {}, user = "system") {
 }
 
 // Get activity logs from database
-export async function getActivityLogs(filters = {}) {
+export async function getActivityLogsFromDb(filters = {}) {
   if (!dbActivityLogs) {
     return [];
   }

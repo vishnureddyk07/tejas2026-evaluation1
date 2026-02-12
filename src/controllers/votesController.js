@@ -3,6 +3,7 @@ import { getDeviceByHash, createDevice } from "../services/deviceService.js";
 import { hasVoted, insertVote } from "../services/voteService.js";
 import { isNonEmptyString, isValidScore, sanitizeString } from "../utils/validators.js";
 import { logActivity } from "../utils/activityLogger.js";
+import { getClientIp } from "../utils/ipUtils.js";
 
 export const checkVoteEligibility = async (req, res) => {
   const { projectId, deviceHash } = req.query;
@@ -71,11 +72,13 @@ export const submitVote = async (req, res) => {
   });
 
   // Log vote submission
+  const ipAddress = getClientIp(req);
   await logActivity("vote", "submit", {
     projectId,
     score: Number(score),
     voterName: nameToStore,
-    deviceHash: deviceHash.substring(0, 8) + "..." // Only log partial hash for privacy
+    deviceHash: deviceHash.substring(0, 8) + "...", // Only log partial hash for privacy
+    ipAddress
   }, nameToStore);
 
   return res.status(201).json({

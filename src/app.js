@@ -16,6 +16,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Trust proxy headers (for Render, Vercel, etc.)
+app.set("trust proxy", 1);
+
 console.log("=== APP STARTUP DEBUG ===");
 console.log("process.env.ADMIN_USERS:", process.env.ADMIN_USERS);
 console.log("config.adminUsers:", config.adminUsers);
