@@ -152,11 +152,17 @@ export const deleteProjectAdmin = async (req, res) => {
 export const getVotesAdmin = async (req, res) => {
   const { projectTitle, teamNumber, department, sector, minScore, maxScore } = req.query;
   
+  // Clean up empty string filters
+  const cleanProjectTitle = projectTitle && projectTitle.trim() !== "" ? projectTitle.trim() : null;
+  const cleanTeamNumber = teamNumber && teamNumber.trim() !== "" ? teamNumber.trim() : null;
+  const cleanDepartment = department && department.trim() !== "" ? department.trim() : null;
+  const cleanSector = sector && sector.trim() !== "" ? sector.trim() : null;
+  
   // Fetch all votes with score filters
   const voteFilters = {
     projectId: null,
-    minScore: minScore !== undefined ? Number(minScore) : null,
-    maxScore: maxScore !== undefined ? Number(maxScore) : null,
+    minScore: minScore !== undefined && minScore !== "" ? Number(minScore) : null,
+    maxScore: maxScore !== undefined && maxScore !== "" ? Number(maxScore) : null,
     from: null,
     to: null
   };
@@ -173,15 +179,15 @@ export const getVotesAdmin = async (req, res) => {
   
   // Apply project filters if specified
   let filteredVotes = votes;
-  if (projectTitle || teamNumber || department || sector) {
+  if (cleanProjectTitle || cleanTeamNumber || cleanDepartment || cleanSector) {
     filteredVotes = votes.filter(v => {
       const project = projectMap.get(v.projectId);
       if (!project) return false;
       
-      const titleMatch = !projectTitle || (project.title && project.title.toLowerCase().includes(projectTitle.toLowerCase()));
-      const teamMatch = !teamNumber || project.teamNumber === teamNumber;
-      const deptMatch = !department || (project.department && project.department.toLowerCase().includes(department.toLowerCase()));
-      const sectorMatch = !sector || (project.sector && project.sector.toLowerCase().includes(sector.toLowerCase()));
+      const titleMatch = !cleanProjectTitle || (project.title && project.title.toLowerCase().includes(cleanProjectTitle.toLowerCase()));
+      const teamMatch = !cleanTeamNumber || project.teamNumber === cleanTeamNumber;
+      const deptMatch = !cleanDepartment || (project.department && project.department.toLowerCase().includes(cleanDepartment.toLowerCase()));
+      const sectorMatch = !cleanSector || (project.sector && project.sector.toLowerCase().includes(cleanSector.toLowerCase()));
       
       return titleMatch && teamMatch && deptMatch && sectorMatch;
     });

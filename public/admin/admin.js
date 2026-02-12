@@ -182,7 +182,16 @@ const initDashboard = async () => {
   };
 
   const loadVotes = async (filters = {}) => {
-    const query = new URLSearchParams(filters).toString();
+    // Remove empty filter values before sending to API
+    const cleanFilters = {};
+    Object.keys(filters).forEach(key => {
+      const value = filters[key];
+      if (value !== null && value !== undefined && value !== "") {
+        cleanFilters[key] = value;
+      }
+    });
+    
+    const query = new URLSearchParams(cleanFilters).toString();
     const data = await apiFetch(`/api/admin/votes?${query}`);
     renderVotes(resultsTable, data.votes || []);
   };
