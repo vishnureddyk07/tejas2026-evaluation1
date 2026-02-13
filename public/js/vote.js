@@ -145,6 +145,12 @@ const init = async () => {
     return;
   }
 
+  // Show placeholders immediately
+  elements.title.textContent = 'Loading...';
+  elements.teamNumber.textContent = state.projectId;
+  elements.sector.textContent = 'Loading...';
+  elements.department.textContent = 'Loading...';
+
   const cachedName = localStorage.getItem("tejas_voter_name");
   if (cachedName) {
     lockName(cachedName);
@@ -168,26 +174,32 @@ const init = async () => {
     }
   });
 
-  try {
-    state.deviceHash = await getDeviceFingerprint();
-    const [project, eligibility] = await Promise.all([fetchProject(), checkEligibility()]);
-
-    elements.title.textContent = project.title || 'Loading...';
+  // Start eligibility check and project fetch in parallel
+  state.deviceHash = await getDeviceFingerprint();
+  const projectPromise = fetchProject().then(project => {
+    elements.title.textContent = project.title || 'No Title';
     elements.teamNumber.textContent = project.teamNumber || state.projectId;
     elements.sector.textContent = project.sector || '';
     elements.department.textContent = project.department || '';
+  }).catch(() => {
+    elements.title.textContent = 'Project not found';
+    elements.sector.textContent = '';
+    elements.department.textContent = '';
+  });
 
+  const eligibilityPromise = checkEligibility().then(eligibility => {
     if (eligibility.voterName) {
       lockName(eligibility.voterName);
     }
-
     if (!eligibility.eligible) {
       state.eligible = false;
       disableVoting("Vote already recorded for this project on this device.");
     }
-  } catch (error) {
-    disableVoting(error.message || "Unable to load project");
-  }
+  }).catch(() => {
+    disableVoting("Unable to verify eligibility");
+  });
+
+  await Promise.all([projectPromise, eligibilityPromise]);
 };
 
 init();
