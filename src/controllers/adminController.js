@@ -122,7 +122,7 @@ export const createProjectWithQr = async (req, res) => {
       sector, 
       department,
       ipAddress
-    }, req.user?.email || "admin");
+    }, req.admin?.email || "admin");
     
     return res.status(201).json({ project, qrDataUrl });
   } catch (error) {
@@ -157,7 +157,7 @@ export const updateProjectAdmin = async (req, res) => {
     projectId, 
     updates,
     ipAddress 
-  }, req.user?.email || "admin");
+  }, req.admin?.email || "admin");
   
   return res.json({ project: updated });
 };
@@ -172,7 +172,7 @@ export const deleteProjectAdmin = async (req, res) => {
   await deleteVotesByProject(projectId);
   await deleteProject(projectId);
 
-  await logActivity("project", "delete", { projectId, ipAddress }, req.user?.email || "admin");
+  await logActivity("project", "delete", { projectId, ipAddress }, req.admin?.email || "admin");
 
   return res.json({ message: "Project and QR deleted" });
 };
@@ -258,7 +258,7 @@ export const getVotesAdmin = async (req, res) => {
       sector: cleanSector,
       voterName: cleanVoterName,
       resultsCount: filteredVotes.length
-    }, req.user?.email || "admin");
+    }, req.admin?.email || "admin");
   }
 
   return res.json({ 
@@ -271,7 +271,7 @@ export const getVotesAdmin = async (req, res) => {
 export const getActivityLogs = async (req, res) => {
   try {
     // RESTRICT TO DEVELOPER ONLY
-    const userEmail = req.user?.email || "unknown";
+    const userEmail = req.admin?.email || "unknown";
     if (userEmail !== "vishnureddy@tejas") {
       console.warn(`[SECURITY] Unauthorized activity log access attempt by ${userEmail}`);
       return res.status(403).json({ 
@@ -328,7 +328,7 @@ export const deleteVote = async (req, res) => {
     }
 
     // Log vote deletion
-    await logActivity("vote", "delete", { voteId, ipAddress }, req.user?.email || "admin");
+    await logActivity("vote", "delete", { voteId, ipAddress }, req.admin?.email || "admin");
 
     return res.json({ message: "Vote deleted successfully", voteId });
   } catch (error) {
@@ -341,7 +341,7 @@ export const deleteVote = async (req, res) => {
 export const downloadActivityLogsExcel = async (req, res) => {
   try {
     // RESTRICT TO DEVELOPER ONLY
-    const userEmail = req.user?.email || "unknown";
+    const userEmail = req.admin?.email || "unknown";
     if (userEmail !== "vishnureddy@tejas") {
       console.warn(`[SECURITY] Unauthorized activity log download attempt by ${userEmail}`);
       return res.status(403).json({ 
