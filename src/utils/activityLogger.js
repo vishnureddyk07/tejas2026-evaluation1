@@ -50,5 +50,5 @@ export async function getActivityLogsFromDb(filters = {}) {
     console.error("[ACTIVITY LOG] Failed to fetch from database:", error);
     return [];
   }
-}
+  
 }
