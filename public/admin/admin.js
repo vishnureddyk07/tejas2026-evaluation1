@@ -58,6 +58,12 @@ const initLogin = () => {
 const renderGallery = (container, projects, onSelect) => {
   if (!container) return;
   container.innerHTML = "";
+  // Update QR count box
+  const countBox = document.getElementById("qr-count-box");
+  const totalCount = window.projectCache ? window.projectCache.length : projects.length;
+  if (countBox) {
+    countBox.textContent = `Showing ${projects.length} of ${totalCount} QR codes`;
+  }
   projects.forEach((project) => {
     const item = document.createElement("div");
     item.className = "qr-item";
@@ -75,7 +81,6 @@ const renderGallery = (container, projects, onSelect) => {
         onSelect(project);
       }
     });
-    
     const downloadBtn = item.querySelector(".download-qr-btn");
     downloadBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -84,7 +89,6 @@ const renderGallery = (container, projects, onSelect) => {
       link.download = `${project.id}-qr.png`;
       link.click();
     });
-    
     container.appendChild(item);
   });
 };
@@ -200,6 +204,8 @@ const initDashboard = async () => {
   const loadProjects = async () => {
     const data = await apiFetch("/api/admin/projects");
     projectCache = data.projects || [];
+    // Expose projectCache globally for count box
+    window.projectCache = projectCache;
     renderGallery(gallery, projectCache, setFormFromProject);
     // QR Gallery search bar logic
     const qrSearch = document.getElementById("qr-search");

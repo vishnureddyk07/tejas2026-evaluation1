@@ -64,26 +64,35 @@ export const submitVote = async (req, res) => {
   }
 
   const nameToStore = device ? (device.voter_name || device.voterName) : sanitizedName;
-  const voteId = await insertVote({
-    projectId,
-    deviceHash,
-    score: Number(score),
-    voterName: nameToStore
-  });
+  try {
+    const voteId = await insertVote({
+      projectId,
+      deviceHash,
+      score: Number(score),
+      voterName: nameToStore
+    });
 
-  // Log vote submission
-  const ipAddress = getClientIp(req);
-  await logActivity("vote", "submit", {
-    projectId,
-    score: Number(score),
-    voterName: nameToStore,
-    deviceHash: deviceHash.substring(0, 8) + "...", // Only log partial hash for privacy
-    ipAddress
-  }, nameToStore);
+    // Log vote submission
+    const ipAddress = getClientIp(req);
+    await logActivity("vote", "submit", {
+      projectId,
+      score: Number(score),
+      voterName: nameToStore,
+      deviceHash: deviceHash.substring(0, 8) + "...", // Only log partial hash for privacy
+      ipAddress
+    }, nameToStore);
 
-  return res.status(201).json({
-    id: voteId,
-    message: "Your vote has been recorded successfully.",
-    timestamp: new Date().toISOString()
-  });
+    return res.status(201).json({
+      id: voteId,
+      message: "Your vote has been recorded successfully.",
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    // Handle duplicate key error from MongoDB
+    if (err && err.code === 11000) {
+      return res.status(409).json({ error: "Duplicate vote detected" });
+    }
+    console.error("[VOTE] Error inserting vote:", err);
+    return res.status(500).json({ error: "Failed to record vote. Please try again." });
+  }
 };
