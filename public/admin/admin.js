@@ -201,6 +201,24 @@ const initDashboard = async () => {
     const data = await apiFetch("/api/admin/projects");
     projectCache = data.projects || [];
     renderGallery(gallery, projectCache, setFormFromProject);
+    // QR Gallery search bar logic
+    const qrSearch = document.getElementById("qr-search");
+    if (qrSearch) {
+      qrSearch.value = "";
+      qrSearch.oninput = function () {
+        const q = qrSearch.value.trim().toLowerCase();
+        if (!q) {
+          renderGallery(gallery, projectCache, setFormFromProject);
+          return;
+        }
+        const filtered = projectCache.filter(p =>
+          (p.title && p.title.toLowerCase().includes(q)) ||
+          (p.teamNumber && p.teamNumber.toLowerCase().includes(q)) ||
+          (p.id && p.id.toLowerCase().includes(q))
+        );
+        renderGallery(gallery, filtered, setFormFromProject);
+      };
+    }
   };
 
   const loadVotes = async (filters = {}) => {
