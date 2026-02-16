@@ -404,3 +404,28 @@ export const downloadActivityLogsExcel = async (req, res) => {
     return res.status(500).json({ error: "Failed to download activity logs" });
   }
 };
+
+// --- Voting Enable/Disable State ---
+let votingEnabled = true;
+
+export const setVotingStatus = (enabled) => {
+  votingEnabled = !!enabled;
+};
+
+export const getVotingStatus = () => votingEnabled;
+
+export const startVoting = async (req, res) => {
+  setVotingStatus(true);
+  await logActivity("admin", "start_voting", { email: req.admin?.email || "admin" });
+  res.json({ enabled: true });
+};
+
+export const stopVoting = async (req, res) => {
+  setVotingStatus(false);
+  await logActivity("admin", "stop_voting", { email: req.admin?.email || "admin" });
+  res.json({ enabled: false });
+};
+
+export const votingStatus = async (req, res) => {
+  res.json({ enabled: getVotingStatus() });
+};

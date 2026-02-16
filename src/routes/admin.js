@@ -10,7 +10,10 @@ import {
 	deleteProjectAdmin,
 	getActivityLogs,
 	deleteVote,
-	downloadActivityLogsExcel
+	downloadActivityLogsExcel,
+	startVoting,
+	stopVoting,
+	votingStatus
 } from "../controllers/adminController.js";
 
 const router = Router();
@@ -24,5 +27,8 @@ router.get("/votes", requireAdmin, asyncHandler(getVotesAdmin));
 router.delete("/votes/:voteId", requireAdmin, asyncHandler(deleteVote));
 router.get("/activity-logs", requireAdmin, asyncHandler(getActivityLogs));
 router.get("/download-activity-logs", requireAdmin, asyncHandler(downloadActivityLogsExcel));
+router.post("/voting/start", requireAdmin, asyncHandler(startVoting));
+router.post("/voting/stop", requireAdmin, asyncHandler(stopVoting));
+router.get("/voting/status", asyncHandler(votingStatus));
 
 export default router;
