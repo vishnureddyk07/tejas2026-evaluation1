@@ -202,8 +202,10 @@ const init = async () => {
     return;
   }
 
-  // Clear cached voter name when a new QR is scanned
+  // Always clear and enable voter name field on new QR scan
   localStorage.removeItem("tejas_voter_name");
+  elements.nameInput.value = "";
+  elements.nameInput.disabled = false;
 
   // Try to show cached project info instantly
   const cachedProject = getCachedProject(state.projectId);
@@ -217,8 +219,6 @@ const init = async () => {
     elements.sector.textContent = 'Loading...';
     elements.department.textContent = 'Loading...';
   }
-
-  // Do not auto-fill name from previous session
 
   setScoreUI(Number(elements.slider.value));
 
