@@ -272,6 +272,11 @@ const initDashboard = async () => {
     }
   };
 
+  const updateTotalVotesPanel = (count) => {
+    const panel = document.getElementById("total-votes-panel");
+    if (panel) panel.textContent = count;
+  };
+
   const loadVotes = async (filters = {}) => {
     // Remove empty filter values before sending to API
     const cleanFilters = {};
@@ -285,6 +290,12 @@ const initDashboard = async () => {
     const query = new URLSearchParams(cleanFilters).toString();
     const data = await apiFetch(`/api/admin/votes?${query}`);
     currentVotes = data.votes || [];
+    // Update total votes panel (all time, not just filtered)
+    if (data.totalVotes !== undefined) {
+      updateTotalVotesPanel(data.totalVotes);
+    } else if (data.stats && data.stats.count !== undefined) {
+      updateTotalVotesPanel(data.stats.count);
+    }
     scoreSortState = 0; // Reset sort state when loading new data
     document.getElementById("score-sort-indicator").textContent = "";
     renderVotes(resultsTable, currentVotes, loadVotes);

@@ -261,9 +261,12 @@ export const getVotesAdmin = async (req, res) => {
     }, req.admin?.email || "admin");
   }
 
+  // Get total votes (all time, not just filtered)
+  const allVotesCount = (await listVotes({ projectId: null, minScore: null, maxScore: null, from: null, to: null })).length;
   return res.json({ 
     votes: mappedVotes,
-    stats: stats
+    stats: stats,
+    totalVotes: allVotesCount
   });
 };
 
