@@ -168,7 +168,7 @@ const submitVote = async () => {
 
 const showSuccess = (timestamp) => {
   const finalName = elements.nameInput.value.trim();
-  if (finalName) {
+  if (finalName && !localStorage.getItem("tejas_voter_name")) {
     localStorage.setItem("tejas_voter_name", finalName);
   }
   elements.successTimestamp.textContent = `Submitted at ${new Date(timestamp).toLocaleString()}`;
@@ -202,10 +202,16 @@ const init = async () => {
     return;
   }
 
-  // Always clear and enable voter name field on new QR scan
-  localStorage.removeItem("tejas_voter_name");
-  elements.nameInput.value = "";
-  elements.nameInput.disabled = false;
+
+  // If a name is already stored for this device, always use and lock it
+  const deviceName = localStorage.getItem("tejas_voter_name");
+  if (deviceName) {
+    elements.nameInput.value = deviceName;
+    elements.nameInput.disabled = true;
+  } else {
+    elements.nameInput.value = "";
+    elements.nameInput.disabled = false;
+  }
 
   // Try to show cached project info instantly
   const cachedProject = getCachedProject(state.projectId);
