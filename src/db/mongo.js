@@ -32,7 +32,11 @@ export const createMongoAdapter = async (dbUrl, { inMemory = false } = {}) => {
     },
     projects: {
       getById: async (id) => {
-        return projects.findOne({ id });
+        // Use projection to only fetch needed fields for voting
+        return projects.findOne(
+          { id },
+          { projection: { _id: 0, id: 1, teamNumber: 1, title: 1, sector: 1, department: 1, qrDataUrl: 1 } }
+        );
       },
       listAll: async () => {
         return projects.find({}, { projection: { _id: 0 } }).toArray();

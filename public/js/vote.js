@@ -4,7 +4,8 @@ const state = {
   projectId: null,
   deviceHash: null,
   voterName: null,
-  eligible: true
+  eligible: true,
+  votingEnabled: true
 };
 
 const elements = {
@@ -77,6 +78,7 @@ const disableVoting = (message) => {
   elements.slider.disabled = true;
   elements.nameInput.disabled = true;
   setMessage(message, true);
+  state.votingEnabled = false;
 };
 
 const lockName = (name) => {
@@ -87,12 +89,51 @@ const lockName = (name) => {
   }
 };
 
-const fetchProject = async () => {
-  const response = await fetch(`${API_URL}/api/projects/${encodeURIComponent(state.projectId)}`);
-  if (!response.ok) {
-    throw new Error("Project not found");
+const PROJECT_CACHE_KEY = "tejas_project_cache_v1";
+const PROJECT_CACHE_SIZE = 20;
+
+const getCachedProject = (projectId) => {
+  try {
+    const cache = JSON.parse(localStorage.getItem(PROJECT_CACHE_KEY) || "[]");
+    return cache.find(p => p.id === projectId) || null;
+  } catch {
+    return null;
   }
-  return response.json();
+};
+
+const setCachedProject = (project) => {
+  try {
+    let cache = JSON.parse(localStorage.getItem(PROJECT_CACHE_KEY) || "[]");
+    cache = [project, ...cache.filter(p => p.id !== project.id)];
+    if (cache.length > PROJECT_CACHE_SIZE) cache.length = PROJECT_CACHE_SIZE;
+    localStorage.setItem(PROJECT_CACHE_KEY, JSON.stringify(cache));
+  } catch {}
+};
+
+const fetchProject = async () => {
+  const url = `${API_URL}/api/projects/${encodeURIComponent(state.projectId)}`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, 2000); // 2 seconds timeout
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!response.ok) {
+      console.error("[VOTE] Project fetch failed", response.status);
+      throw new Error("Project not found");
+    }
+    const project = await response.json();
+    setCachedProject(project);
+    return project;
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') {
+      console.error("[VOTE] Project fetch timed out");
+      throw new Error("Project info is taking too long. Please try again.");
+    }
+    throw err;
+  }
 };
 
 const checkEligibility = async () => {
@@ -138,18 +179,41 @@ const showSuccess = (timestamp) => {
   setMessage("", false);
 };
 
+const checkVotingStatus = async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/votes/status`);
+    const data = await response.json();
+    state.votingEnabled = !!data.enabled;
+    if (!state.votingEnabled) {
+      disableVoting("Voting is currently disabled by admin.");
+    }
+  } catch {
+    // fallback: allow voting if status can't be fetched
+    state.votingEnabled = true;
+  }
+};
+
 const init = async () => {
   state.projectId = getProjectId();
+  await checkVotingStatus();
   if (!state.projectId) {
     disableVoting("Invalid QR code. Project ID missing.");
     return;
   }
 
-  // Show placeholders immediately
-  elements.title.textContent = 'Loading...';
+
+  // Try to show cached project info instantly
+  const cachedProject = getCachedProject(state.projectId);
   elements.teamNumber.textContent = state.projectId;
-  elements.sector.textContent = 'Loading...';
-  elements.department.textContent = 'Loading...';
+  if (cachedProject) {
+    elements.title.textContent = cachedProject.title || 'No Title';
+    elements.sector.textContent = cachedProject.sector || '';
+    elements.department.textContent = cachedProject.department || '';
+  } else {
+    elements.title.textContent = 'Loading...';
+    elements.sector.textContent = 'Loading...';
+    elements.department.textContent = 'Loading...';
+  }
 
   const cachedName = localStorage.getItem("tejas_voter_name");
   if (cachedName) {
@@ -181,10 +245,13 @@ const init = async () => {
     elements.teamNumber.textContent = project.teamNumber || state.projectId;
     elements.sector.textContent = project.sector || '';
     elements.department.textContent = project.department || '';
-  }).catch(() => {
+    console.log('[VOTE] Project loaded:', project);
+  }).catch((err) => {
     elements.title.textContent = 'Project not found';
     elements.sector.textContent = '';
     elements.department.textContent = '';
+    setMessage(err.message || 'Unable to load project', true);
+    console.error('[VOTE] Project load error:', err);
   });
 
   const eligibilityPromise = checkEligibility().then(eligibility => {
