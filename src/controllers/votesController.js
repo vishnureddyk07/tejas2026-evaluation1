@@ -1,3 +1,10 @@
+// Voting status endpoint for frontend
+import { getVotingStatus } from "./adminController.js";
+
+export const votingStatus = async (req, res) => {
+  // Always return enabled: true/false for voting
+  return res.status(200).json({ enabled: getVotingStatus() });
+};
 import { getProjectById } from "../services/projectService.js";
 import { getDeviceByHash, createDevice } from "../services/deviceService.js";
 import { hasVoted, insertVote } from "../services/voteService.js";

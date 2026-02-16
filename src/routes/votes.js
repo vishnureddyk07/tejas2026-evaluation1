@@ -1,7 +1,7 @@
 
 import { Router } from "express";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { checkVoteEligibility, submitVote } from "../controllers/votesController.js";
+import { checkVoteEligibility, submitVote, votingStatus } from "../controllers/votesController.js";
 import rateLimit from "express-rate-limit";
 
 
@@ -18,6 +18,7 @@ const voteLimiter = rateLimit({
 
 
 router.get("/check", asyncHandler(checkVoteEligibility));
+router.get("/status", asyncHandler(votingStatus));
 router.post("/", voteLimiter, asyncHandler(submitVote));
 
 export default router;
