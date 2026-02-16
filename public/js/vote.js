@@ -187,7 +187,7 @@ const checkVotingStatus = async () => {
     if (!state.votingEnabled) {
       disableVoting("Voting is currently disabled by admin.");
     }
-  } catch {
+  } catch (e) {
     // fallback: allow voting if status can't be fetched
     state.votingEnabled = true;
   }
