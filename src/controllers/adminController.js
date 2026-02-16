@@ -417,15 +417,15 @@ export const getVotingStatus = () => votingEnabled;
 export const startVoting = async (req, res) => {
   setVotingStatus(true);
   await logActivity("admin", "start_voting", { email: req.admin?.email || "admin" });
-  res.json({ enabled: true });
+  return res.status(200).json({ success: true, enabled: true });
 };
 
 export const stopVoting = async (req, res) => {
   setVotingStatus(false);
   await logActivity("admin", "stop_voting", { email: req.admin?.email || "admin" });
-  res.json({ enabled: false });
+  return res.status(200).json({ success: true, enabled: false });
 };
 
 export const votingStatus = async (req, res) => {
-  res.json({ enabled: getVotingStatus() });
+  return res.status(200).json({ success: true, enabled: getVotingStatus() });
 };

@@ -150,15 +150,39 @@ const initDashboard = async () => {
   if (toggleVotingBtn) {
     toggleVotingBtn.style.display = "inline-block";
   }
-  // Voting toggle logic
+  // Voting toggle logic with status fetch and confirmation
+  async function updateVotingToggleUI() {
+    try {
+      const status = await apiFetch("/api/admin/voting/status", { method: "GET" });
+      if (toggleVotingBtn) {
+        if (status.success && status.enabled) {
+          toggleVotingBtn.textContent = "🔴 Stop Voting";
+          toggleVotingBtn.style.background = "rgba(255,100,100,0.2)";
+        } else if (status.success && !status.enabled) {
+          toggleVotingBtn.textContent = "🟢 Start Voting";
+          toggleVotingBtn.style.background = "rgba(100,255,100,0.2)";
+        } else {
+          toggleVotingBtn.textContent = "Voting Toggle (Error)";
+        }
+      }
+    } catch (e) {
+      if (toggleVotingBtn) toggleVotingBtn.textContent = "Voting Toggle (Error)";
+    }
+  }
+
   if (toggleVotingBtn) {
+    await updateVotingToggleUI();
     toggleVotingBtn.addEventListener("click", async () => {
       try {
-        const current = toggleVotingBtn.textContent.includes("🟢");
-        const action = current ? "stop" : "start";
+        const isEnabled = toggleVotingBtn.textContent.includes("Stop");
+        const action = isEnabled ? "stop" : "start";
+        const confirmMsg = isEnabled
+          ? "Are you sure you want to STOP voting? This will prevent all users from voting."
+          : "Are you sure you want to START voting? This will allow users to submit votes.";
+        if (!window.confirm(confirmMsg)) return;
         await apiFetch(`/api/admin/voting/${action}`, { method: "POST" });
-        toggleVotingBtn.textContent = current ? "🔴 Stop Voting" : "🟢 Start Voting";
         setMessage(projectMessage, `Voting ${action === "start" ? "enabled" : "disabled"} successfully.`);
+        await updateVotingToggleUI();
       } catch (error) {
         setMessage(projectMessage, error.message, true);
       }
