@@ -144,6 +144,28 @@ const initDashboard = async () => {
     return;
   }
 
+  // Show voting toggle only for developer
+  const developerEmail = "developer@anurag.edu"; // Change as needed
+  const userEmail = localStorage.getItem("tejus_admin_email");
+  const toggleVotingBtn = document.getElementById("toggle-voting-btn");
+  if (userEmail === developerEmail && toggleVotingBtn) {
+    toggleVotingBtn.style.display = "inline-block";
+  }
+  // Voting toggle logic
+  if (toggleVotingBtn) {
+    toggleVotingBtn.addEventListener("click", async () => {
+      try {
+        const current = toggleVotingBtn.textContent.includes("🟢");
+        const action = current ? "stop" : "start";
+        await apiFetch(`/api/admin/voting/${action}`, { method: "POST" });
+        toggleVotingBtn.textContent = current ? "🔴 Stop Voting" : "🟢 Start Voting";
+        setMessage(projectMessage, `Voting ${action === "start" ? "enabled" : "disabled"} successfully.`);
+      } catch (error) {
+        setMessage(projectMessage, error.message, true);
+      }
+    });
+  }
+
   const projectMessage = document.getElementById("project-message");
   const qrPreview = document.getElementById("qr-preview");
   const gallery = document.getElementById("qr-gallery");
