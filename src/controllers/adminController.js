@@ -406,13 +406,7 @@ export const downloadActivityLogsExcel = async (req, res) => {
 };
 
 // --- Voting Enable/Disable State ---
-let votingEnabled = true;
-
-export const setVotingStatus = (enabled) => {
-  votingEnabled = !!enabled;
-};
-
-export const getVotingStatus = () => votingEnabled;
+import { setVotingStatus, getVotingStatus } from "../state/votingState.js";
 
 export const startVoting = async (req, res) => {
   setVotingStatus(true);
