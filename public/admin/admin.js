@@ -146,7 +146,7 @@ const initDashboard = async () => {
   }
 
   // Show voting toggle only for developer
-  const developerEmail = "developer@anurag.edu"; // Set your developer email here
+  const developerEmail = "vishnureddy@tejas"; // Set your developer email here
   const userEmail = localStorage.getItem("tejus_admin_email");
   const toggleVotingBtn = document.getElementById("toggle-voting-btn");
   if (toggleVotingBtn) {
