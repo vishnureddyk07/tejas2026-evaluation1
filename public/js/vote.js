@@ -167,10 +167,6 @@ const submitVote = async () => {
 };
 
 const showSuccess = (timestamp) => {
-  const finalName = elements.nameInput.value.trim();
-  if (finalName && !localStorage.getItem("tejas_voter_name")) {
-    localStorage.setItem("tejas_voter_name", finalName);
-  }
   elements.successTimestamp.textContent = `Submitted at ${new Date(timestamp).toLocaleString()}`;
   elements.successCard.classList.add("show");
   elements.submitButton.disabled = true;
@@ -204,14 +200,9 @@ const init = async () => {
 
 
   // If a name is already stored for this device, always use and lock it
-  const deviceName = localStorage.getItem("tejas_voter_name");
-  if (deviceName) {
-    elements.nameInput.value = deviceName;
-    elements.nameInput.disabled = true;
-  } else {
-    elements.nameInput.value = "";
-    elements.nameInput.disabled = false;
-  }
+  // Always allow user to enter their name for every vote
+  elements.nameInput.value = "";
+  elements.nameInput.disabled = false;
 
   // Try to show cached project info instantly
   const cachedProject = getCachedProject(state.projectId);
