@@ -51,12 +51,7 @@ export const submitVote = async (req, res) => {
   const device = await getDeviceByHash(deviceHash);
   const sanitizedName = sanitizeString(voterName);
 
-  if (device) {
-    const existingName = device.voter_name || device.voterName;
-    if (sanitizedName && existingName !== sanitizedName) {
-      return res.status(409).json({ error: "Voter name is locked to this device" });
-    }
-  } else {
+  if (!device) {
     if (!isNonEmptyString(sanitizedName)) {
       return res.status(400).json({ error: "voterName is required for first-time devices" });
     }
