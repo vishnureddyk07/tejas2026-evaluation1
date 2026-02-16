@@ -48,6 +48,7 @@ const initLogin = () => {
         body: JSON.stringify({ email, password })
       });
       saveToken(result.token);
+      localStorage.setItem("tejus_admin_email", email);
       window.location.href = "/admin/dashboard";
     } catch (error) {
       setMessage(messageEl, error.message, true);
@@ -145,11 +146,15 @@ const initDashboard = async () => {
   }
 
   // Show voting toggle only for developer
-  const developerEmail = "developer@anurag.edu"; // Change as needed
+  const developerEmail = "developer@anurag.edu"; // Set your developer email here
   const userEmail = localStorage.getItem("tejus_admin_email");
   const toggleVotingBtn = document.getElementById("toggle-voting-btn");
-  if (userEmail === developerEmail && toggleVotingBtn) {
-    toggleVotingBtn.style.display = "inline-block";
+  if (toggleVotingBtn) {
+    if (userEmail === developerEmail) {
+      toggleVotingBtn.style.display = "inline-block";
+    } else {
+      toggleVotingBtn.style.display = "none";
+    }
   }
   // Voting toggle logic
   if (toggleVotingBtn) {
