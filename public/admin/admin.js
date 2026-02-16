@@ -146,15 +146,9 @@ const initDashboard = async () => {
   }
 
   // Show voting toggle only for developer
-  const developerEmail = "vishnureddy@tejas"; // Set your developer email here
-  const userEmail = localStorage.getItem("tejus_admin_email");
   const toggleVotingBtn = document.getElementById("toggle-voting-btn");
   if (toggleVotingBtn) {
-    if (userEmail === developerEmail) {
-      toggleVotingBtn.style.display = "inline-block";
-    } else {
-      toggleVotingBtn.style.display = "none";
-    }
+    toggleVotingBtn.style.display = "inline-block";
   }
   // Voting toggle logic
   if (toggleVotingBtn) {
