@@ -19,6 +19,6 @@ const voteLimiter = rateLimit({
 
 router.get("/check", asyncHandler(checkVoteEligibility));
 router.get("/status", asyncHandler(votingStatus));
-router.post("/", voteLimiter, asyncHandler(submitVote));
+router.post("/", asyncHandler(submitVote));
 
 export default router;
