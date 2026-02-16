@@ -255,13 +255,12 @@ const init = async () => {
   });
 
   const eligibilityPromise = checkEligibility().then(eligibility => {
-    if (eligibility.voterName) {
-      lockName(eligibility.voterName);
-    }
     if (!eligibility.eligible) {
       state.eligible = false;
+      lockName(eligibility.voterName); // Only lock if already voted
       disableVoting("Vote already recorded for this project on this device.");
     }
+    // If eligible, leave name field enabled and blank
   }).catch(() => {
     disableVoting("Unable to verify eligibility");
   });
